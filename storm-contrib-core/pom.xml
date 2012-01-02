@@ -12,6 +12,13 @@
   <name>storm-contrib-core</name>
   <description>Core dependencies and components for storm-contrib</description>
 
+  <dependencies>
+    <dependency>
+  	  <groupId>storm</groupId>
+  	  <artifactId>storm</artifactId>
+  	</dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>
