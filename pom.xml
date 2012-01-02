@@ -31,5 +31,6 @@
   <modules>
     <module>storm-contrib-core</module>
     <module>storm-contrib-mongo</module>
+    <module>storm-contrib-sqs</module>
   </modules>
 </project>
