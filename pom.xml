@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>storm</groupId>
+  <artifactId>storm-contrib</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>storm-contrib</name>
+  <description>A collection of spouts, bolts, serializers, DSLs, and other goodies to use with Storm</description>
+  <url>http://github.com/nathanmarz/storm-contrib</url>
+  <modules>
+    <module>storm-contrib-core</module>
+    <module>storm-contrib-mongo</module>
+  </modules>
+</project>
