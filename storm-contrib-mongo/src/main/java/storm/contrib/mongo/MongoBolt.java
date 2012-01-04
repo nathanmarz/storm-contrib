@@ -14,7 +14,7 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.tuple.Tuple;
 
 /**
- * A Spout for recording input tuples to Mongo. Subclasses are expected to
+ * A Bolt for recording input tuples to Mongo. Subclasses are expected to
  * provide the logic behind mapping input tuples to Mongo objects.
  * 
  * @todo Provide optional batching of calls.
