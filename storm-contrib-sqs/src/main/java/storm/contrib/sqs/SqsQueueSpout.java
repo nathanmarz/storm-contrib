@@ -93,12 +93,12 @@ public abstract class SqsQueueSpout implements IRichSpout {
 		Message message = queue.poll();
 		if (message != null) {
 			if (reliable) {
-				collector.emit(messageToStormTuple(message), message.getReceiptHandle());
+				collector.emit(getStreamId(message), messageToStormTuple(message), message.getReceiptHandle());
 			} else {
 				// Delete it right away
 				sqs.deleteMessageAsync(new DeleteMessageRequest(queueUrl, message.getReceiptHandle()));
 
-				collector.emit(messageToStormTuple(message));
+				collector.emit(getStreamId(message), messageToStormTuple(message));
 			}
 		} else {
 			// Still empty, go to sleep.
@@ -106,6 +106,20 @@ public abstract class SqsQueueSpout implements IRichSpout {
 		}
 	}
 
+	/**
+	 * Returns the stream on which this spout will emit. By default, it is just
+	 * {@code Utils.DEFAULT_STREAM_ID}. Simply override this method to send to
+	 * a different stream.
+	 * 
+	 * By using the {@code message} parameter, you can send different messages
+	 * to different streams based on context.
+	 *
+	 * @return the stream on which this spout will emit.
+	 */
+	public String getStreamId(Message message) {
+		return Utils.DEFAULT_STREAM_ID;
+	}
+	
 	@Override
 	public void ack(Object msgId) {
 		// Only called in reliable mode.
