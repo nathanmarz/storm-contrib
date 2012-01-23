@@ -27,7 +27,7 @@ public class SimpleMongoBolt extends MongoBolt {
 	 * collection with this name does not already exist, it will be
 	 * automatically created.
 	 */
-	protected SimpleMongoBolt(
+	public SimpleMongoBolt(
 			String mongoHost, int mongoPort, String mongoDbName, String mongoCollectionName) {
 
 		super(mongoHost, mongoPort, mongoDbName);
