@@ -58,6 +58,8 @@ public abstract class SqsQueueSpout implements IRichSpout {
 	private final String queueUrl;
 	private final boolean reliable;
 	private LinkedBlockingQueue<Message> queue;
+	
+	private int sleepTime;
 
 	/**
 	 * @param queueUrl the URL for the Amazon SQS queue to consume from
@@ -66,6 +68,7 @@ public abstract class SqsQueueSpout implements IRichSpout {
 	public SqsQueueSpout(String queueUrl, boolean reliable) {
 		this.queueUrl = queueUrl;
 		this.reliable = reliable;
+		this.sleepTime = 100;
 	}
 
 	@Override
@@ -102,7 +105,7 @@ public abstract class SqsQueueSpout implements IRichSpout {
 			}
 		} else {
 			// Still empty, go to sleep.
-			Utils.sleep(100);
+			Utils.sleep(sleepTime);
 		}
 	}
 
@@ -118,6 +121,33 @@ public abstract class SqsQueueSpout implements IRichSpout {
 	 */
 	public String getStreamId(Message message) {
 		return Utils.DEFAULT_STREAM_ID;
+	}
+	
+	/**
+	 * Returns the number of milliseconds the spout will wait before making
+	 * another call to SQS when the previous call came back empty. Defaults to
+	 * {@code 100}.
+	 * 
+	 * Since Amazon charges per SQS request, you can use this parameter to
+	 * control costs for lower-volume queues.
+	 * 
+	 * @return the number of milliseconds the spout will wait between SQS calls.
+	 */
+	public int getSleepTime() {
+		return sleepTime;
+	}
+	
+	/**
+	 * Sets the number of milliseconds the spout will wait before making
+	 * another call to SQS when the previous call came back empty.
+	 * 
+	 * Since Amazon charges per SQS request, you can use this parameter to
+	 * control costs for lower-volume queues.
+	 * 
+	 * @param sleepTime the number of milliseconds the spout will wait between SQS calls.
+	 */
+	public void setSleepTime(int sleepTime) {
+		this.sleepTime = sleepTime;
 	}
 	
 	@Override
