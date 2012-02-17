@@ -1,4 +1,4 @@
-(defproject storm-pubsub "0.0.1-SNAPSHOT"
+(defproject storm-redis-pubsub "0.0.1-SNAPSHOT"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
