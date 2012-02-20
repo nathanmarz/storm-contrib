@@ -1,27 +1,14 @@
-Introduction
+storm-contrib is a community repository for modules to use with Storm. These include a variety of spouts/bolts for integrating with other systems (Redis, Kafka, MongoDB, etc), as well as code for common tasks a Storm developer encounters.
+
+For more information about Storm itself, see [the Storm GitHub repository](http://github.com/nathanmarz/storm).
+
+Organization
 ============
 
-Storm-contrib is a set of modules for performing common tasks in Storm,
-and particularly for integrating with various 3rd-party tools. These are
-wheels that should not need to be re-invented by every developer who
-wants to build something non-trivial on top of Storm.
+storm-contrib is organized as a "super-project" with a sub-folder for each module. Each module is distributed independently and module owners are responsible for distribution.
 
-For more information about Storm itself, see [the Storm GitHub
-repository](http://github.com/nathanmarz/storm).
 
-Modules
-=======
+Contributing
+============
 
-Storm-contrib currently consists of the following modules:
-
-storm-contrib-core
-------------------
-
-General-purpose tools (for example, a ClockSpout) that implement
-patterns used by various other modules.
-
-storm-contrib-mongo
--------------------
-
-A simple pattern for writing records from a Storm stream to a MongoDB
-collection.
+If you're interested in contributing a module to storm-contrib, send an email to the [Storm mailing list](http://groups.google.com/group/storm-user). You will then be given commit rights to storm-contrib. The advantage of having your module be part of storm-contrib instead of your own project is more visibility for your code. However, if you'd rather maintain your module as its own project that's fine too!
