@@ -1,0 +1,30 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>storm</groupId>
+    <artifactId>storm-contrib</artifactId>
+    <version>0.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>storm-growl</artifactId>
+  <packaging>jar</packaging>
+  <name>storm-growl</name>
+  <description>Storm bolt implementation for growl notification</description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>storm</groupId>
+      <artifactId>storm</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.libgrowl</groupId>
+      <artifactId>libgrowl</artifactId>
+      <version>0.2</version>
+    </dependency>
+  </dependencies>
+</project>
