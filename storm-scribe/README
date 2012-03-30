@@ -6,4 +6,4 @@ See http://groups.google.com/group/scribe-server/msg/c6d04c3b0ee25ddc for more d
 
 This is an unreliable spout that doesn't guarantee data processing. With some more work, it can be extended to be reliable – see the note in ScribeReceiver.java.
 
-This spout *mostly* respects TOPOLOGY_MAX_SPOUT_PENDING. If the spout is deactivated (like as part of the topology shutdown), it will flush its internal queue of messages to the output collector. This ensures that every message pushed to it is at least attempted to be processed. As explained above, with more work actual reliability could be added to the spout.
+This spout *mostly* respects TOPOLOGY_MAX_SPOUT_PENDING. If the spout is deactivated (like as part of the topology shutdown), it will flush its internal queue of messages to the output collector (which may be more than TOPOLOGY_MAX_SPOUT_PENDING). This ensures that every message pushed to it is at least attempted to be processed. As explained above, with more work actual reliability could be added to the spout.
