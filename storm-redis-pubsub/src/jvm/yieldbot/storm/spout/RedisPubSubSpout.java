@@ -14,12 +14,12 @@ import redis.clients.jedis.JedisPubSub;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
+import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 
-public class RedisPubSubSpout implements IRichSpout {
+public class RedisPubSubSpout extends BaseRichSpout {
 	
 	static final long serialVersionUID = 737015318988609460L;
 	static Logger LOG = Logger.getLogger(RedisPubSubSpout.class);
