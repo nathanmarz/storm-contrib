@@ -2,14 +2,10 @@
 
 package backtype.storm.contrib.signals.test;
 
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import backtype.storm.contrib.signals.spout.BaseSignalSpout;
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 
 public class TestSignalSpout extends BaseSignalSpout {

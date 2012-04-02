@@ -4,13 +4,24 @@ Storm-Signals aims to provide a way to send messages ("signals") to components (
 Storm topologies can be considered static in that modifications to a topology's behavior require redeployment. Storm-Signals provides a simple way to modify a topology's behavior at runtime, without redeployment.
 
 
+### Project Location
+Primary development of storm-signals will take place at: 
+https://github.com/ptgoetz/storm-signals
+
+Point/stable (non-SNAPSHOT) release souce code will be pushed to:
+https://github.com/nathanmarz/storm-contrib
+
+Maven artifacts for releases will be available on maven central.
+
+
+
 
 ### Use Cases
 Typical storm spouts run forever (until undeployed), emitting tuples based on an underlying, presumably event-driven, data source/stream.
 
 Some storm users have expressed an interest in having more control over that pattern, for instance in situations where the data stream is not open-ended, or where the situation requires that data streams be controllable (i.e. the ability to start/stop/pause/resume processing).
 
-Storm-Signals provides a very simple mechanism for communicating with spouts deployed within a storm topology. The comunication mechanism resides outside of storm's basic stream processing paradigm (i.e. calls to `nextTuple()` and the tuple ack/fail mechanism).
+Storm-Signals provides a very simple mechanism for communicating with spouts deployed within a storm topology. The communication mechanism resides outside of storm's basic stream processing paradigm (i.e. calls to `nextTuple()` and the tuple ack/fail mechanism).
 
 Signals (messages)
 
