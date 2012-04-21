@@ -7,9 +7,9 @@ import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
@@ -38,8 +38,9 @@ public class TestGrowlTopology {
             conf.setNumWorkers(3);
             
             StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
-        } else {
         
+        } else {
+        	/* local mode */
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("test", conf, builder.createTopology());
             Utils.sleep(10000);
@@ -53,7 +54,7 @@ public class TestGrowlTopology {
 	/*
 	 * test spout for GrowlBolt
 	 */
-	public static class GrowlTestSpout implements IRichSpout{
+	public static class GrowlTestSpout extends BaseRichSpout{
 		
 		SpoutOutputCollector _collector;
 		@Override
@@ -63,19 +64,24 @@ public class TestGrowlTopology {
 		}
 
 		@Override
-		public void close() {
-		}
-
-		@Override
 		public void nextTuple() {
 			String title = "Storm Growl";
 			String message = "Hello Growl!";
 			
 			_collector.emit(new Values(title, message));
 	        Utils.sleep(5000);
-
+		}
+		
+		@Override
+		public void close() {
 		}
 
+		@Override
+		public Map<String, Object> getComponentConfiguration() {
+			Config conf = new Config();			
+			return conf;
+		}
+		
 		@Override
 		public void ack(Object msgId) {
 		}
@@ -87,11 +93,6 @@ public class TestGrowlTopology {
 		@Override
 		public void declareOutputFields(OutputFieldsDeclarer declarer) {
 			declarer.declare(new Fields("title", "message"));
-		}
-
-		@Override
-		public boolean isDistributed() {
-			return false;
 		}
 		
 	}
