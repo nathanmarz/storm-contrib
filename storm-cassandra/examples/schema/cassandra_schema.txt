@@ -1,0 +1,98 @@
+drop keyspace stormks;
+
+create keyspace stormks;
+
+use stormks;
+
+  create column family stormcf
+  with column_type = 'Standard'
+  and comparator = 'UTF8Type'
+  and default_validation_class = 'UTF8Type'
+  and key_validation_class = 'UTF8Type';
+  
+  create column family followers
+  with column_type = 'Standard'
+  and comparator = 'UTF8Type'
+  and default_validation_class = 'UTF8Type'
+  and key_validation_class = 'UTF8Type';
+  set followers['sally']['bob']='';
+  set followers['sally']['tim']='';
+  set followers['sally']['alice']='';
+  set followers['sally']['adam']='';
+  set followers['sally']['jim']='';
+  set followers['sally']['chris']='';
+  set followers['sally']['jai']='';
+  set followers['bob']['sally']='';
+  set followers['bob']['nathan']='';
+  set followers['bob']['jim']='';
+  set followers['bob']['mary']='';
+  set followers['bob']['david']='';
+  set followers['bob']['vivian']='';
+  set followers['tim']['alex']='';
+  set followers['nathan']['sally']='';
+  set followers['nathan']['bob']='';
+  set followers['nathan']['adam']='';
+  set followers['nathan']['harry']='';
+  set followers['nathan']['chris']='';
+  set followers['nathan']['vivian']='';
+  set followers['nathan']['jordan']='';
+  set followers['nathan']['emily']='';
+  set followers['adam']['david']='';
+  set followers['adam']['carissa']='';
+  set followers['adam']['david']='';
+  set followers['mike']['john']='';
+  set followers['mike']['bob']='';
+  set followers['john']['alice']='';
+  set followers['john']['nathan']='';
+  set followers['john']['jim']='';
+  set followers['john']['mike']='';
+  set followers['john']['bob']='';
+  
+  
+  create column family tweeters
+  with column_type = 'Standard'
+  and comparator = 'UTF8Type'
+  and default_validation_class = 'UTF8Type'
+  and key_validation_class = 'UTF8Type';
+  
+  set tweeters['http://github.com/ptgoetz']['sally']='';
+  set tweeters['http://github.com/ptgoetz']['bob']='';
+  set tweeters['http://github.com/ptgoetz']['tim']='';
+  set tweeters['http://github.com/ptgoetz']['george']='';
+  set tweeters['http://github.com/ptgoetz']['nathan']='';
+  
+  set tweeters['http://github.com/hmsonline']['adam']='';
+  set tweeters['http://github.com/hmsonline']['david']='';
+  set tweeters['http://github.com/hmsonline']['sally']='';
+  set tweeters['http://github.com/hmsonline']['nathan']='';
+  
+  set tweeters['http://github.com/nathanmarz']['tim']='';
+  set tweeters['http://github.com/nathanmarz']['mike']='';
+  set tweeters['http://github.com/nathanmarz']['john']='';
+  
+  
+  
+  create column family followers_delimited
+  with column_type = 'Standard'
+  and comparator = 'UTF8Type'
+  and default_validation_class = 'UTF8Type'
+  and key_validation_class = 'UTF8Type';
+
+  
+  set followers_delimited['sally']['followers']='bob:tim:alice:adam:jim:chris:jai';
+  set followers_delimited['bob']['followers']='sally:nathan:jim:mary:david:vivian';
+  set followers_delimited['tim']['followers']='alex';
+  set followers_delimited['nathan']['followers']='sally:bob:adam:harry:chris:vivian:emily:jordan';
+  set followers_delimited['adam']['followers']='david:carissa';
+  set followers_delimited['mike']['followers']='john:bob';
+  set followers_delimited['john']['followers']='alice:nathan:jim:mike:bob';
+
+  create column family tweeters_delimited
+  with column_type = 'Standard'
+  and comparator = 'UTF8Type'
+  and default_validation_class = 'UTF8Type'
+  and key_validation_class = 'UTF8Type';
+  
+  set tweeters_delimited['http://github.com/ptgoetz']['tweeted_by']='sally:bob:tim:george:nathan';
+  set tweeters_delimited['http://github.com/hmsonline']['tweeted_by']='adam:david:sally:nathan';
+  set tweeters_delimited['http://github.com/nathanmarz']['tweeted_by']='tim:mike:john';
