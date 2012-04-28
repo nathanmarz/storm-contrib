@@ -13,13 +13,13 @@ import org.apache.log4j.Logger;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.BasicOutputCollector;
-import backtype.storm.topology.IBasicBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.topology.base.BaseBasicBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
-public class GrowlBolt implements IBasicBolt
+public class GrowlBolt extends BaseBasicBolt
 {
 	public static Logger LOG = Logger.getLogger(GrowlBolt.class);
 	/*
@@ -65,10 +65,7 @@ public class GrowlBolt implements IBasicBolt
     	iconUrl = growlConf.iconUrl;
     	
     }    
-    /*
-     * (non-Javadoc)
-     * @see backtype.storm.topology.IBasicBolt#prepare(java.util.Map, backtype.storm.task.TopologyContext)
-     */
+    
     @Override
 	public void prepare(Map stormConf, TopologyContext context) {
     	_application = new Application(name);
@@ -83,20 +80,15 @@ public class GrowlBolt implements IBasicBolt
     	}
 	}
     
-    /*
-     * (non-Javadoc)
-     * @see backtype.storm.topology.IBasicBolt#execute(backtype.storm.tuple.Tuple, backtype.storm.topology.BasicOutputCollector)
-     */
     public void execute(Tuple tuple, BasicOutputCollector collector) {
         /*
-         * tuple must contains Fields named "title", "message" and "iconURL".
+         * tuple must contains Fields named "title" and "message".
          * "title" is used for Growl Title
          * "message" is used for Growl Message
          */
     	
     	String title = tuple.getStringByField("title");
-    	String message = tuple.getStringByField("message");
-    	
+    	String message = tuple.getStringByField("message");    	
     	
     	Notification notification = new Notification(_application, _notificationType, title, message);
 		notification.setPriority(priority);
@@ -113,13 +105,8 @@ public class GrowlBolt implements IBasicBolt
 	public void cleanup() {
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see backtype.storm.topology.IComponent#declareOutputFields(backtype.storm.topology.OutputFieldsDeclarer)
-	 */
-    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("title", "message"));
     }
-
-	
+    
 }

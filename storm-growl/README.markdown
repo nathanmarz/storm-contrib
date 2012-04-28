@@ -14,3 +14,7 @@ storm-growl requires libgrowl. You can download it from  http://sourceforge.net/
 ## Configuration
 
 You must set up growl can "Listen for incoming notifications" at "Growl" in "System Preferences". (for Mac users)
+
+## For old versions
+
+You can get storm-growl for old storm versions. https://github.com/tjun/storm-growl
