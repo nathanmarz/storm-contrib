@@ -1,0 +1,7 @@
+#storm-rdbms
+
+A bolt that create a table in rdbms(if not already created) and dumps the stream data into it.
+
+Each tuple is written as a row into the table.
+
+Note : The column names in the RDBMS table need to match the names of the fields in the tuple
