@@ -24,6 +24,11 @@ public class ListState<T> extends AbstractList<T> implements State {
     public static class Add implements Transaction<ListState> {
         Object obj;
         
+        //for kryo
+        public Add() {
+            
+        }
+        
         public Add(Object o) {
             obj = o;
         }
@@ -39,6 +44,11 @@ public class ListState<T> extends AbstractList<T> implements State {
         int i;
         Object obj;
         
+        //for kryo
+        public Set() {
+            
+        }
+        
         public Set(int i, Object o) {
             this.i = i;
             this.obj = o;
@@ -53,6 +63,10 @@ public class ListState<T> extends AbstractList<T> implements State {
     }
     
     HDFSState _state;
+    
+    public ListState(String dfsDir) {
+        this(dfsDir, new Serializations());
+    }
     
     public ListState(String dfsDir, Serializations sers) {
         sers = sers.clone();
@@ -70,7 +84,7 @@ public class ListState<T> extends AbstractList<T> implements State {
     }    
     
     public void compact(Executor executor) {
-        _state.compact(_cache, executor);
+        _state.compact(_cache);//executor);
     }
     
     @Override

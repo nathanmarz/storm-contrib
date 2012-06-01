@@ -21,13 +21,18 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
         if(snapshot==null) {
             _cache = PersistentHashMap.EMPTY;
         } else {
-            _cache = (PersistentHashMap) snapshot;            
+            _cache = (IPersistentMap) snapshot;            
         }
     }
     
     public static class Put implements Transaction<MapState> {
         Object key;
         Object value;
+        
+        //for kryo
+        public Put() {
+            
+        }
         
         public Put(Object k, Object v) {
             key = k;
@@ -44,6 +49,11 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
     
     public static class Remove implements Transaction<MapState> {
         Object key;
+        
+        //for kryo
+        public Remove() {
+            
+        }
         
         public Remove(Object k) {
             key = k;
@@ -65,6 +75,10 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
         }        
     }    
     
+    public MapState(String fsLocation) {
+        this(fsLocation, new Serializations());
+    }
+    
     public MapState(String fsLocation, Serializations sers) {
         sers = sers.clone();
         sers.add(Put.class).add(Remove.class).add(Clear.class);
@@ -81,7 +95,7 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
     }    
     
     public void compact(Executor executor) {
-        _state.compact(_cache, executor);
+        _state.compact(_cache);//executor);
     }
 
     @Override
