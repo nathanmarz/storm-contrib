@@ -90,7 +90,7 @@ public class HDFSState {
     }
     
     public void commit(State state) {
-        commit(null);
+        commit(null, state);
     }
     
     public void commit(BigInteger txid, State state) {

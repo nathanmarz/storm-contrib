@@ -33,6 +33,7 @@ public class HDFSLog {
             try {
                 _kryo = kryo;
                 _writer = SequenceFile.createWriter(fs, fs.getConf(), new Path(path), BytesWritable.class, NullWritable.class, SequenceFile.CompressionType.NONE);
+                _writer.syncFs();
             } catch(IOException e) {
                 throw new RuntimeException(e);
             }            
@@ -55,6 +56,7 @@ public class HDFSLog {
             try {
                 LOG.info("Syncing to fs");
                 //this doesn't work in local mode...?
+                // this doesn't work on the cluster either...
                 _writer.syncFs();
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -71,7 +73,7 @@ public class HDFSLog {
     }
 
     public static class LogReader {
-        SequenceFile.Reader _reader = null;
+        SequenceFileReader _reader = null;
         BytesWritable _key = new BytesWritable();
         Kryo _kryo;
         Input _input = new Input(0);
@@ -88,7 +90,7 @@ public class HDFSLog {
         public Object read() {
             try {
                 if(_reader==null) {
-                    _reader = new SequenceFile.Reader(_fs, new Path(_path), _fs.getConf());
+                    _reader = new SequenceFileReader(_fs, new Path(_path), _fs.getConf());
                 }
                 boolean gotnew = _reader.next(_key, NullWritable.get());
                 if(!gotnew) {
