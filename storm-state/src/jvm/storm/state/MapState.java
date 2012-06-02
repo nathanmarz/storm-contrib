@@ -17,8 +17,14 @@ import storm.state.hdfs.HDFSState.State;
 
 public class MapState<K, V> extends AbstractMap<K, V> implements State {
     public static MapState openPartition(Map conf, TopologyContext context, String stateDir, Serializations sers) {
-        return new MapState(PartitionedState.thisStateDir(conf, context, stateDir), sers);
+        MapState ret = new MapState(PartitionedState.thisStateDir(conf, context, stateDir), sers);
+        ret.setExecutor(context.getSharedExecutor());
+        return ret;
     }
+
+    public static MapState openPartition(Map conf, TopologyContext context, String stateDir) {
+        return openPartition(conf, context, stateDir, new Serializations());
+    }        
     
     IPersistentMap _cache;
     HDFSState _state;
@@ -92,6 +98,10 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
         _state = new HDFSState(fsLocation, sers);
         _state.resetToLatest(this);
     }
+
+    public void setExecutor(Executor e) {
+        _state.setExecutor(e);
+    }    
     
     public void commit() {
         _state.commit(this);
@@ -105,8 +115,8 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
         _state.compact(_cache);
     }
     
-    public void compactAsync(Executor executor) {
-        _state.compactAsync(_cache, executor);
+    public void compactAsync() {
+        _state.compactAsync(_cache);
     }
 
     @Override

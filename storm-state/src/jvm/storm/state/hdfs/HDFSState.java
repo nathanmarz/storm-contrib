@@ -80,6 +80,12 @@ public class HDFSState {
         cleanup();
     }
     
+    Executor _executor = null;
+    
+    public void setExecutor(Executor executor) {
+        _executor = executor;
+    }
+    
     public Object appendAndApply(Transaction entry, State state) {
         _pendingTransactions.add(entry);
         return entry.apply(state);
@@ -165,10 +171,13 @@ public class HDFSState {
         doCompact(version, new Snapshot(_currVersion, immutableSnapshot));        
     }
     
-    public void compactAsync(Object immutableSnapshot, Executor executor) {
+    public void compactAsync(Object immutableSnapshot) {
+        if(_executor==null) {
+            throw new RuntimeException("Need to configure with an executor to run compactions in the background");
+        }
         final long version = prepareCompact(immutableSnapshot);
         final Snapshot snapshot = new Snapshot(_currVersion, immutableSnapshot);
-        executor.execute(new Runnable() {
+        _executor.execute(new Runnable() {
             @Override
             public void run() {
                 doCompact(version, snapshot);

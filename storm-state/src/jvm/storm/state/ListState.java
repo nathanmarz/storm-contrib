@@ -14,9 +14,14 @@ import storm.state.hdfs.HDFSState.State;
 
 public class ListState<T> extends AbstractList<T> implements State {
     public static ListState openPartition(Map conf, TopologyContext context, String stateDir, Serializations sers) {
-        return new ListState(PartitionedState.thisStateDir(conf, context, stateDir), sers);
+        ListState ret = new ListState(PartitionedState.thisStateDir(conf, context, stateDir), sers);
+        ret.setExecutor(context.getSharedExecutor());
+        return ret;
     }
 
+    public static ListState openPartition(Map conf, TopologyContext context, String stateDir) {
+        return openPartition(conf, context, stateDir, new Serializations());
+    }    
     
     IPersistentVector _cache;
     
@@ -83,6 +88,10 @@ public class ListState<T> extends AbstractList<T> implements State {
         _state.resetToLatest(this);
     }
     
+    public void setExecutor(Executor e) {
+        _state.setExecutor(e);
+    }
+    
     public void commit() {
         _state.commit(this);
     }
@@ -95,8 +104,8 @@ public class ListState<T> extends AbstractList<T> implements State {
         _state.compact(_cache);//executor);
     }
 
-    public void compactAsync(Executor executor) {
-        _state.compactAsync(_cache, executor);
+    public void compactAsync() {
+        _state.compactAsync(_cache);
     }    
     
     @Override
