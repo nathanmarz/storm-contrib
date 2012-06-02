@@ -1,4 +1,4 @@
-package storm.state;
+package storm.state.hdfs;
 
 import carbonite.JavaBridge;
 import com.esotericsoftware.kryo.Kryo;
@@ -11,6 +11,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Semaphore;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -19,7 +21,9 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.log4j.Logger;
-import storm.state.HDFSLog.LogWriter;
+import storm.state.hdfs.HDFSLog.LogWriter;
+import storm.state.Serializations;
+import storm.state.Transaction;
 
 
 public class HDFSState {
@@ -38,6 +42,7 @@ public class HDFSState {
     
     LogWriter _openLog;
     boolean _isLocal = false;
+    Semaphore _compactionWaiter = new Semaphore(1);
         
     public HDFSState(String dfsDir, Serializations sers) {
         try {
@@ -84,21 +89,26 @@ public class HDFSState {
         return _currVersion;
     }
     
-    public void commit() {
+    public void commit(State state) {
         commit(null);
     }
     
-    public void commit(BigInteger txid) {
+    public void commit(BigInteger txid, State state) {
         Commit commit = new Commit(txid, _pendingTransactions);
         _pendingTransactions = new ArrayList<Transaction>();
-        _openLog.write(commit);
-        if(_isLocal) {
-            // see HADOOP-7844
-            rotateLog();        
+        if(txid==null || txid.equals(getVersion())) {
+            _openLog.write(commit);
+            if(_isLocal) {
+                // see HADOOP-7844
+                rotateLog();        
+            } else {
+                _openLog.sync();            
+            }
+            _currVersion = txid;
         } else {
-            _openLog.sync();            
+            // we've done this update before, so reset the state
+            resetToLatest(state);
         }
-        _currVersion = txid;
     }
     
     public void resetToLatest(State state) {
@@ -149,19 +159,46 @@ public class HDFSState {
         _openLog = HDFSLog.create(_fs, txlogPath(newTxLogVersion), _serializer);        
         
     }
-
     
-    //TODO: need to do this in the background... need an executor threadpool that can be used
     public void compact(Object immutableSnapshot) {
-        Snapshot toWrite = new Snapshot(_currVersion, immutableSnapshot);
+        long version = prepareCompact(immutableSnapshot);
+        doCompact(version, new Snapshot(_currVersion, immutableSnapshot));        
+    }
+    
+    public void compactAsync(Object immutableSnapshot, Executor executor) {
+        final long version = prepareCompact(immutableSnapshot);
+        final Snapshot snapshot = new Snapshot(_currVersion, immutableSnapshot);
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                doCompact(version, snapshot);
+            }            
+        });
+    }
+    
+    private long prepareCompact(Object immutableSnapshot) {
+        try {
+            _compactionWaiter.acquire();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         long snapVersion = latestTxlog();
         if(snapVersion<0) {
             throw new RuntimeException("Expected a txlog version greater than or equal to 0");
         }
         rotateLog();
-        writeSnapshot(_fs, snapVersion, toWrite);
-        cleanup();
+        return snapVersion;
     }
+
+    private void doCompact(long version, Snapshot snapshot) {
+        try {
+            writeSnapshot(_fs, version, snapshot);
+            cleanup();
+        } finally {
+            _compactionWaiter.release();
+        }
+    }
+    
     
     public static class Snapshot {
         BigInteger txid;

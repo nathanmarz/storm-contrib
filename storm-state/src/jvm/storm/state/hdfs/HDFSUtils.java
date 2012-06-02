@@ -1,4 +1,4 @@
-package storm.state;
+package storm.state.hdfs;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -10,6 +10,10 @@ import org.apache.hadoop.fs.Path;
 
 
 public class HDFSUtils {
+    public static String normalizePath(String path) {
+        return new Path(path).toString();
+    }
+    
     public static List<Long> getSortedVersions(FileSystem fs, String dir, String suffix) {
         try {
             List<Long> ret = new ArrayList<Long>();

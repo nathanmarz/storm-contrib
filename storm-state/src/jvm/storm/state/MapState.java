@@ -1,18 +1,25 @@
 package storm.state;
 
+import backtype.storm.task.TopologyContext;
 import clojure.lang.IPersistentMap;
 import clojure.lang.MapEntry;
 import clojure.lang.PersistentHashMap;
 import java.math.BigInteger;
 import java.util.AbstractMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import storm.state.HDFSState.State;
+import storm.state.hdfs.HDFSState;
+import storm.state.hdfs.HDFSState.State;
 
 
 public class MapState<K, V> extends AbstractMap<K, V> implements State {
+    public static MapState openPartition(Map conf, TopologyContext context, String stateDir, Serializations sers) {
+        return new MapState(PartitionedState.thisStateDir(conf, context, stateDir), sers);
+    }
+    
     IPersistentMap _cache;
     HDFSState _state;
 
@@ -87,15 +94,19 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
     }
     
     public void commit() {
-        _state.commit();
+        _state.commit(this);
     }
     
     public void commit(BigInteger txid) {
-        _state.commit(txid);
+        _state.commit(txid, this);
     }    
     
-    public void compact(Executor executor) {
-        _state.compact(_cache);//executor);
+    public void compact() {
+        _state.compact(_cache);
+    }
+    
+    public void compactAsync(Executor executor) {
+        _state.compactAsync(_cache, executor);
     }
 
     @Override

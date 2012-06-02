@@ -1,16 +1,24 @@
 package storm.state;
 
+import backtype.storm.task.TopologyContext;
 import clojure.lang.IPersistentVector;
 import clojure.lang.PersistentVector;
 import clojure.lang.SeqIterator;
 import java.math.BigInteger;
 import java.util.AbstractList;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.Executor;
-import storm.state.HDFSState.State;
+import storm.state.hdfs.HDFSState;
+import storm.state.hdfs.HDFSState.State;
 
 public class ListState<T> extends AbstractList<T> implements State {
-    IPersistentVector _cache;    
+    public static ListState openPartition(Map conf, TopologyContext context, String stateDir, Serializations sers) {
+        return new ListState(PartitionedState.thisStateDir(conf, context, stateDir), sers);
+    }
+
+    
+    IPersistentVector _cache;
     
     public static class Clear implements Transaction<ListState> {
 
@@ -76,16 +84,20 @@ public class ListState<T> extends AbstractList<T> implements State {
     }
     
     public void commit() {
-        _state.commit();
+        _state.commit(this);
     }
 
     public void commit(BigInteger txid) {
-        _state.commit(txid);
+        _state.commit(txid, this);
     }    
     
     public void compact(Executor executor) {
         _state.compact(_cache);//executor);
     }
+
+    public void compactAsync(Executor executor) {
+        _state.compactAsync(_cache, executor);
+    }    
     
     @Override
     public void clear() {

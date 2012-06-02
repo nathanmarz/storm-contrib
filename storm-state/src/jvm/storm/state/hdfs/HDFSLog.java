@@ -1,4 +1,4 @@
-package storm.state;
+package storm.state.hdfs;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
