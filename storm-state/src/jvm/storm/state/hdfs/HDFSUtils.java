@@ -1,17 +1,43 @@
 package storm.state.hdfs;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RawLocalFileSystem;
+import org.apache.log4j.Logger;
 
 
 public class HDFSUtils {
+    public static final Logger LOG = Logger.getLogger(HDFSUtils.class);
+    
     public static String normalizePath(String path) {
         return new Path(path).toString();
+    }
+    
+    public static FileSystem getFS(String path) {
+        try {
+            FileSystem ret = new Path(path).getFileSystem(new Configuration());
+            if(ret instanceof LocalFileSystem) {
+                LOG.info("Using local filesystem and disabling checksums");
+                ret = new RawLocalFileSystem();
+                try {
+                    ((RawLocalFileSystem) ret).initialize(new URI("file://localhost/"), new Configuration());
+                } catch (URISyntaxException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return ret;
+        } catch(IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     public static List<Long> getSortedVersions(FileSystem fs, String dir, String suffix) {

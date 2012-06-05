@@ -45,25 +45,13 @@ public class HDFSState {
     Semaphore _compactionWaiter = new Semaphore(1);
         
     public HDFSState(String dfsDir, Serializations sers) {
-        try {
-            _fs = new Path(dfsDir).getFileSystem(new Configuration());
-            if(_fs instanceof LocalFileSystem) {
-                LOG.info("Using local filesystem and disabling checksums");
-                _fs = new RawLocalFileSystem();
-                _isLocal = true;
-                try {
-                    ((RawLocalFileSystem) _fs).initialize(new URI("file://localhost/"), new Configuration());
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            _rootDir = new Path(dfsDir).toString();
-            HDFSUtils.mkdirs(_fs, tmpDir());
-            HDFSUtils.mkdirs(_fs, snapshotDir());
-            HDFSUtils.mkdirs(_fs, logDir());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        _fs = HDFSUtils.getFS(dfsDir);
+        _isLocal = _fs instanceof RawLocalFileSystem;
+        _rootDir = new Path(dfsDir).toString();
+        HDFSUtils.mkdirs(_fs, tmpDir());
+        HDFSUtils.mkdirs(_fs, snapshotDir());
+        HDFSUtils.mkdirs(_fs, logDir());
+
         
         _serializer = new Kryo();
         sers.apply(_serializer);
@@ -186,6 +174,7 @@ public class HDFSState {
     }
     
     private long prepareCompact(Object immutableSnapshot) {
+        //TODO: maybe it's better to skip the compaction if it's currently going on (rather than block here)
         try {
             _compactionWaiter.acquire();
         } catch (InterruptedException e) {
