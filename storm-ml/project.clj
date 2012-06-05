@@ -6,4 +6,5 @@
   :javac-options {:debug "true" :fork "true"}
   :aot :all
   :dev-dependencies [[org.clojure/clojure "1.4.0"]
+                     [org.javatuples/javatuples "1.2"]
                      [storm "0.7.2"]])
