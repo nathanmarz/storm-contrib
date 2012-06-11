@@ -50,7 +50,7 @@ public class ScribeReceiver {
         if(putTimeout==null) putTimeout = 5;
         
         Number portDelta = (Number) conf.get("scribe.spout.port.delta");
-        if(portDelta==null) putTimeout = 2000;
+        if(portDelta==null) portDelta = 2000;
         
         int port = context.getThisWorkerPort() + portDelta.intValue();
 
@@ -67,6 +67,7 @@ public class ScribeReceiver {
                     30000,
                     15000,
                     new RetryNTimes(4, 1000));
+            _zk.start();
             _zk.create()
                .creatingParentsIfNeeded()
                .withMode(CreateMode.EPHEMERAL)
@@ -84,7 +85,13 @@ public class ScribeReceiver {
                     .processor(new scribe.Processor(handler));
 
             _server = new THsHaServer(args);
-            _server.serve();
+            Thread thread = new Thread(new Runnable() {
+                    public void run() {
+                      _server.serve();
+                    }
+                  });
+            thread.setDaemon(true);
+            thread.start();
         } catch (TTransportException ex) {
             throw new RuntimeException(ex);
         }
