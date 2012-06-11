@@ -126,6 +126,11 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
     }
 
     @Override
+    public BigInteger getVersion() {
+        return _state.getVersion();
+    }    
+
+    @Override
     public V put(K key, V value) {
         return (V) _state.appendAndApply(new Put(key, value), this);
     }

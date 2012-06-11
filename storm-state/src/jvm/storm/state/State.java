@@ -12,4 +12,5 @@ public interface State {
     void compact();
     void compactAsync();
     void close();
+    BigInteger getVersion();
 }

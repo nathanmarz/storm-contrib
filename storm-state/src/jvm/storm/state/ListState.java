@@ -115,6 +115,11 @@ public class ListState<T> extends AbstractList<T> implements State {
     }
 
     @Override
+    public BigInteger getVersion() {
+        return _state.getVersion();
+    }    
+
+    @Override
     public void clear() {
         _state.appendAndApply(new Clear(), this);
     }
