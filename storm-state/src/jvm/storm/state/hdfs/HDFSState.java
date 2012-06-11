@@ -27,6 +27,7 @@ import storm.state.Transaction;
 public class HDFSState {
     public static final Logger LOG = Logger.getLogger(HDFSState.class);
     public static final String AUTO_COMPACT_BYTES_CONFIG = "topology.state.auto.compact.bytes";
+    public static final int DEFAULT_AUTO_COMPACT_BYTES = 10 * 1024 * 1024;
         
     List<Transaction> _pendingTransactions = new ArrayList<Transaction>();
     Kryo _serializer;
@@ -47,7 +48,7 @@ public class HDFSState {
         _rootDir = new Path(dfsDir).toString();
         
         Number autoCompactFrequency = (Number) conf.get(AUTO_COMPACT_BYTES_CONFIG);
-        if(autoCompactFrequency == null) autoCompactFrequency = 1024 * 1024;
+        if(autoCompactFrequency == null) autoCompactFrequency = DEFAULT_AUTO_COMPACT_BYTES;
         _autoCompactFrequencyBytes = autoCompactFrequency.longValue();
         
         HDFSUtils.mkdirs(_fs, tmpDir());
