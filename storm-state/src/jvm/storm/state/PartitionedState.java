@@ -29,8 +29,8 @@ public class PartitionedState {
                 meta.put("numPartitions", numTasks);
                 writeMeta(fs, metaPath, meta);
             }
-            String dir =  stateDir + "/" + context.getThisTaskId();
-            State state = factory.makeState(conf, stateDir, sers);
+            String dir =  stateDir + "/" + context.getThisTaskIndex();
+            State state = factory.makeState(conf, dir, sers);
             state.setExecutor(context.getSharedExecutor());
             return state;
         } catch(IOException e) {

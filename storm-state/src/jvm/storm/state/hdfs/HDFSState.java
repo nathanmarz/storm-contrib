@@ -102,6 +102,7 @@ public class HDFSState {
             _currVersion = txid;
             if(_autoCompactFrequencyBytes > 0 && _writtenSinceCompaction > _autoCompactFrequencyBytes) {
                 compactAsync(state);
+                _writtenSinceCompaction = 0;
             }
         } else {
             // we've done this update before, so reset the state

@@ -9,6 +9,7 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import storm.state.PartitionedState;
@@ -47,6 +48,7 @@ public class StatefulBoltExecutor implements IRichBolt {
             for(Tuple t: _pendingAcks) {
                 _rootCollector.ack(t);
             }
+            _pendingAcks.clear();
         } else {
             _delegate.execute(tuple, _collector);        
         }
@@ -71,6 +73,7 @@ public class StatefulBoltExecutor implements IRichBolt {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         Map ret = _delegate.getComponentConfiguration();
+        if(ret==null) ret = new HashMap();
         Number commitFreq = (Number) ret.get(IStatefulBolt.TOPOLOGY_STATE_COMMIT_FREQ_SECS);
         if(commitFreq == null) commitFreq = 5;
         ret.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, commitFreq.intValue());

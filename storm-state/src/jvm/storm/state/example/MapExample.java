@@ -12,6 +12,7 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import storm.state.MapState;
@@ -77,7 +78,6 @@ public class MapExample {
     
     public static class WordCount implements IStatefulBolt {
         MapState _state;
-        Map<String, Integer> _pending;
         
         @Override
         public void prepare(Map conf, TopologyContext context, State state) {
@@ -87,22 +87,14 @@ public class MapExample {
         @Override
         public void execute(Tuple tuple, BasicOutputCollector collector) {
             String word = tuple.getString(0);
-            if(_pending.containsKey(word)) {
-                _pending.put(word, _pending.get(word) + 1);                
-            } else {
-                _pending.put(word, 1);            
-            }
+            Integer amt = (Integer) _state.get(word);
+            if(amt==null) amt = 1;
+            else amt = amt + 1;
+            _state.put(word, amt);            
         }
 
         @Override
         public void preCommit(BasicOutputCollector collector) {
-            for(String w: _pending.keySet()) {
-                int inc = _pending.get(w);
-                Integer amt = (Integer) _state.get(w);
-                if(amt==null) amt = inc;
-                else amt = amt + inc;
-                _state.put(w, amt);
-            }
             System.out.println(_state.size());
         }
 
@@ -133,11 +125,12 @@ public class MapExample {
     
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new ThrottledWordSpout(6, 1000), 4);
-        builder.setBolt("counter", new StatefulBoltExecutor(new WordCount(), "hdfs://10.202.7.99:8020/tmp/data"), 8)
+        builder.setSpout("spout", new ThrottledWordSpout(7, 4000), 8);
+        builder.setBolt("counter", new StatefulBoltExecutor(new WordCount(), "hdfs://ip-10-202-7-99.ec2.internal:8020/tmp/data"), 8)
                 .fieldsGrouping("spout", new Fields("word"));
         
         Config conf = new Config();
+        conf.setNumWorkers(8);
         StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
     }
     
