@@ -14,7 +14,7 @@ import storm.state.hdfs.HDFSState.State;
 
 public class ListState<T> extends AbstractList<T> implements State {
     public static ListState openPartition(Map conf, TopologyContext context, String stateDir, Serializations sers) {
-        ListState ret = new ListState(PartitionedState.thisStateDir(conf, context, stateDir), sers);
+        ListState ret = new ListState(conf, PartitionedState.thisStateDir(conf, context, stateDir), sers);
         ret.setExecutor(context.getSharedExecutor());
         return ret;
     }
@@ -77,15 +77,20 @@ public class ListState<T> extends AbstractList<T> implements State {
     
     HDFSState _state;
     
-    public ListState(String dfsDir) {
-        this(dfsDir, new Serializations());
+    public ListState(Map conf, String dfsDir) {
+        this(conf, dfsDir, new Serializations());
     }
     
-    public ListState(String dfsDir, Serializations sers) {
+    public ListState(Map conf, String dfsDir, Serializations sers) {
         sers = sers.clone();
         sers.add(Set.class).add(Clear.class).add(Add.class);        
-        _state = new HDFSState(dfsDir, sers);
+        _state = new HDFSState(conf, dfsDir, sers);
         _state.resetToLatest(this);
+    }
+    
+    @Override
+    public Object getSnapshot() {
+        return _cache;
     }
     
     public void setExecutor(Executor e) {
@@ -100,12 +105,12 @@ public class ListState<T> extends AbstractList<T> implements State {
         _state.commit(txid, this);
     }    
     
-    public void compact(Executor executor) {
-        _state.compact(_cache);//executor);
+    public void compact() {
+        _state.compact(this);
     }
 
     public void compactAsync() {
-        _state.compactAsync(_cache);
+        _state.compactAsync(this);
     }    
     
     @Override

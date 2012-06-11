@@ -39,13 +39,19 @@ public class HDFSLog {
             }            
         }
         
-        public void write(Object o) {
+        /**
+         * Returns the amount of data written (in bytes).
+         * 
+         */
+        public int write(Object o) {
             _output.clear();
             _kryo.writeClassAndObject(_output, o);
-            _key.set(_output.getBuffer(), 0, _output.total());
+            int amtWritten = _output.total();
+            _key.set(_output.getBuffer(), 0, amtWritten);
             try {
                 LOG.info("Writing to log: " + o);
                 _writer.append(_key, NullWritable.get());
+                return amtWritten;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -79,11 +85,16 @@ public class HDFSLog {
         Input _input = new Input(0);
         String _path;
         FileSystem _fs;
+        long _amtRead;
         
         protected LogReader(FileSystem fs, String path, Kryo kryo) {
             _kryo = kryo;
             _fs = fs;
             _path = path;
+        }
+        
+        public long amtRead() {
+            return _amtRead;
         }
         
         //returns null and automatically closes itself when there's nothing left
@@ -97,7 +108,9 @@ public class HDFSLog {
                     _reader.close();
                     return null;
                 } else {
-                    _input.setBuffer(_key.getBytes(), 0, _key.getLength());
+                    int keyLength = _key.getLength();
+                    _amtRead += keyLength;
+                    _input.setBuffer(_key.getBytes(), 0, keyLength);
                     
                     return _kryo.readClassAndObject(_input);
                 }

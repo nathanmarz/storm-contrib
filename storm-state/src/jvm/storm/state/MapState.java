@@ -17,7 +17,7 @@ import storm.state.hdfs.HDFSState.State;
 
 public class MapState<K, V> extends AbstractMap<K, V> implements State {
     public static MapState openPartition(Map conf, TopologyContext context, String stateDir, Serializations sers) {
-        MapState ret = new MapState(PartitionedState.thisStateDir(conf, context, stateDir), sers);
+        MapState ret = new MapState(conf, PartitionedState.thisStateDir(conf, context, stateDir), sers);
         ret.setExecutor(context.getSharedExecutor());
         return ret;
     }
@@ -36,6 +36,11 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
         } else {
             _cache = (IPersistentMap) snapshot;            
         }
+    }
+    
+    @Override
+    public Object getSnapshot() {
+        return _cache;
     }
     
     public static class Put implements Transaction<MapState> {
@@ -88,14 +93,14 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
         }        
     }    
     
-    public MapState(String fsLocation) {
-        this(fsLocation, new Serializations());
+    public MapState(Map conf, String fsLocation) {
+        this(conf, fsLocation, new Serializations());
     }
     
-    public MapState(String fsLocation, Serializations sers) {
+    public MapState(Map conf, String fsLocation, Serializations sers) {
         sers = sers.clone();
         sers.add(Put.class).add(Remove.class).add(Clear.class);
-        _state = new HDFSState(fsLocation, sers);
+        _state = new HDFSState(conf, fsLocation, sers);
         _state.resetToLatest(this);
     }
 
@@ -112,11 +117,11 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
     }    
     
     public void compact() {
-        _state.compact(_cache);
+        _state.compact(this);
     }
     
     public void compactAsync() {
-        _state.compactAsync(_cache);
+        _state.compactAsync(this);
     }
 
     @Override

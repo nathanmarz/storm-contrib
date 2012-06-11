@@ -7,17 +7,14 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.BigIntegerSerializer;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.log4j.Logger;
@@ -28,9 +25,11 @@ import storm.state.Transaction;
 
 public class HDFSState {
     public static final Logger LOG = Logger.getLogger(HDFSState.class);
-
+    public static final String AUTO_COMPACT_BYTES_CONFIG = "topology.state.auto.compact.bytes";
+    
     public static interface State {
         public void setState(Object snapshot);
+        public Object getSnapshot();
     }
     
     List<Transaction> _pendingTransactions = new ArrayList<Transaction>();
@@ -43,11 +42,18 @@ public class HDFSState {
     LogWriter _openLog;
     boolean _isLocal = false;
     Semaphore _compactionWaiter = new Semaphore(1);
+    long _writtenSinceCompaction = 0;
+    long _autoCompactFrequencyBytes;
         
-    public HDFSState(String dfsDir, Serializations sers) {
+    public HDFSState(Map conf, String dfsDir, Serializations sers) {
         _fs = HDFSUtils.getFS(dfsDir);
         _isLocal = _fs instanceof RawLocalFileSystem;
         _rootDir = new Path(dfsDir).toString();
+        
+        Number autoCompactFrequency = (Number) conf.get(AUTO_COMPACT_BYTES_CONFIG);
+        if(autoCompactFrequency == null) autoCompactFrequency = 1024 * 1024;
+        _autoCompactFrequencyBytes = autoCompactFrequency.longValue();
+        
         HDFSUtils.mkdirs(_fs, tmpDir());
         HDFSUtils.mkdirs(_fs, snapshotDir());
         HDFSUtils.mkdirs(_fs, logDir());
@@ -91,7 +97,7 @@ public class HDFSState {
         Commit commit = new Commit(txid, _pendingTransactions);
         _pendingTransactions = new ArrayList<Transaction>();
         if(txid==null || txid.equals(getVersion())) {
-            _openLog.write(commit);
+            _writtenSinceCompaction += _openLog.write(commit);
             if(_isLocal) {
                 // see HADOOP-7844
                 rotateLog();        
@@ -99,6 +105,9 @@ public class HDFSState {
                 _openLog.sync();            
             }
             _currVersion = txid;
+            if(_autoCompactFrequencyBytes > 0 && _writtenSinceCompaction > _autoCompactFrequencyBytes) {
+                compactAsync(state);
+            }
         } else {
             // we've done this update before, so reset the state
             resetToLatest(state);
@@ -119,6 +128,7 @@ public class HDFSState {
         }
         if(latestSnapshot==null) latestSnapshot = -1L;
         List<Long> txLogs = allTxlogs();
+        _writtenSinceCompaction = 0;
         for(Long l: txLogs) {
             if(l > latestSnapshot) {
                 HDFSLog.LogReader r = HDFSLog.open(_fs, txlogPath(l), _serializer);
@@ -130,6 +140,7 @@ public class HDFSState {
                         t.apply(state);
                     }
                 }
+                _writtenSinceCompaction += r.amtRead();
             }
         }
         _currVersion = version;
@@ -154,12 +165,14 @@ public class HDFSState {
         
     }
     
-    public void compact(Object immutableSnapshot) {
-        long version = prepareCompact(immutableSnapshot);
-        doCompact(version, new Snapshot(_currVersion, immutableSnapshot));        
+    public void compact(State state) {
+        Object snapshot = state.getSnapshot();
+        long version = prepareCompact(snapshot);
+        doCompact(version, new Snapshot(_currVersion, snapshot));        
     }
     
-    public void compactAsync(Object immutableSnapshot) {
+    public void compactAsync(State state) {
+        Object immutableSnapshot = state.getSnapshot();
         if(_executor==null) {
             throw new RuntimeException("Need to configure with an executor to run compactions in the background");
         }
