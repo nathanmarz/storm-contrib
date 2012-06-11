@@ -20,18 +20,14 @@ import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.log4j.Logger;
 import storm.state.hdfs.HDFSLog.LogWriter;
 import storm.state.Serializations;
+import storm.state.State;
 import storm.state.Transaction;
 
 
 public class HDFSState {
     public static final Logger LOG = Logger.getLogger(HDFSState.class);
     public static final String AUTO_COMPACT_BYTES_CONFIG = "topology.state.auto.compact.bytes";
-    
-    public static interface State {
-        public void setState(Object snapshot);
-        public Object getSnapshot();
-    }
-    
+        
     List<Transaction> _pendingTransactions = new ArrayList<Transaction>();
     Kryo _serializer;
     BigInteger _currVersion;
@@ -57,7 +53,6 @@ public class HDFSState {
         HDFSUtils.mkdirs(_fs, tmpDir());
         HDFSUtils.mkdirs(_fs, snapshotDir());
         HDFSUtils.mkdirs(_fs, logDir());
-
         
         _serializer = new Kryo();
         sers.apply(_serializer);
@@ -239,6 +234,10 @@ public class HDFSState {
             this.txid = txid;
             this.transactions = transactions;
         }        
+    }
+    
+    public void close() {
+        _openLog.close();
     }
     
     private String tmpDir() {

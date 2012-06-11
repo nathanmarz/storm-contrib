@@ -12,19 +12,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import storm.state.hdfs.HDFSState;
-import storm.state.hdfs.HDFSState.State;
 
 
-public class MapState<K, V> extends AbstractMap<K, V> implements State {
-    public static MapState openPartition(Map conf, TopologyContext context, String stateDir, Serializations sers) {
-        MapState ret = new MapState(conf, PartitionedState.thisStateDir(conf, context, stateDir), sers);
-        ret.setExecutor(context.getSharedExecutor());
-        return ret;
-    }
-
-    public static MapState openPartition(Map conf, TopologyContext context, String stateDir) {
-        return openPartition(conf, context, stateDir, new Serializations());
-    }        
+public class MapState<K, V> extends AbstractMap<K, V> implements State {    
+    public static class Factory implements StateFactory {
+        @Override
+        public State makeState(Map conf, String rootDir, Serializations sers) {
+            return new MapState(conf, rootDir, sers);
+        }        
+    }  
     
     IPersistentMap _cache;
     HDFSState _state;
@@ -122,6 +118,11 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
     
     public void compactAsync() {
         _state.compactAsync(this);
+    }
+
+    @Override
+    public void close() {
+        _state.close();
     }
 
     @Override

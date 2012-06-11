@@ -10,19 +10,15 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import storm.state.hdfs.HDFSState;
-import storm.state.hdfs.HDFSState.State;
 
 public class ListState<T> extends AbstractList<T> implements State {
-    public static ListState openPartition(Map conf, TopologyContext context, String stateDir, Serializations sers) {
-        ListState ret = new ListState(conf, PartitionedState.thisStateDir(conf, context, stateDir), sers);
-        ret.setExecutor(context.getSharedExecutor());
-        return ret;
+    public static class Factory implements StateFactory {
+        @Override
+        public State makeState(Map conf, String rootDir, Serializations sers) {
+            return new ListState(conf, rootDir, sers);
+        }        
     }
-
-    public static ListState openPartition(Map conf, TopologyContext context, String stateDir) {
-        return openPartition(conf, context, stateDir, new Serializations());
-    }    
-    
+        
     IPersistentVector _cache;
     
     public static class Clear implements Transaction<ListState> {
@@ -113,6 +109,11 @@ public class ListState<T> extends AbstractList<T> implements State {
         _state.compactAsync(this);
     }    
     
+    @Override
+    public void close() {
+        _state.close();
+    }
+
     @Override
     public void clear() {
         _state.appendAndApply(new Clear(), this);

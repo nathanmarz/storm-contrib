@@ -11,8 +11,8 @@ import org.apache.hadoop.fs.Path;
 import org.json.simple.JSONValue;
 import storm.state.hdfs.HDFSUtils;
 
-public class PartitionedState {    
-    public static String thisStateDir(Map conf, TopologyContext context, String stateDir) {
+public class PartitionedState {
+    public static State getState(Map conf, TopologyContext context, String stateDir, StateFactory factory, Serializations sers) {
         try {
             int numTasks = context.getComponentTasks(context.getThisComponentId()).size();
             stateDir = HDFSUtils.normalizePath(stateDir);
@@ -29,12 +29,19 @@ public class PartitionedState {
                 meta.put("numPartitions", numTasks);
                 writeMeta(fs, metaPath, meta);
             }
-            return stateDir + "/" + context.getThisTaskId();
+            String dir =  stateDir + "/" + context.getThisTaskId();
+            State state = factory.makeState(conf, stateDir, sers);
+            state.setExecutor(context.getSharedExecutor());
+            return state;
         } catch(IOException e) {
             throw new RuntimeException(e);
-        }
+        }        
     }
-    
+
+    public static State getState(Map conf, TopologyContext context, String stateDir, StateFactory factory) {
+        return getState(conf, context, stateDir, factory, new Serializations());
+    }
+        
     
     private static void writeMeta(FileSystem fs, String path, Map meta) throws IOException {
         String tmp = path + ".tmp";
