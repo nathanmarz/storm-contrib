@@ -18,5 +18,6 @@ public interface IStatefulBolt extends IComponent, IStateful {
     
     void prepare(Map conf, TopologyContext context, State state);
     void execute(Tuple tuple, BasicOutputCollector collector);
+    void preCommit(BasicOutputCollector collector);
     void cleanup();
 }
