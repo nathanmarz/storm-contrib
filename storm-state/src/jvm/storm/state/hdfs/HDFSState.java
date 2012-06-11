@@ -316,7 +316,7 @@ public class HDFSState {
         try {
             String finalPath = snapshotPath(version);
             String tmpPath = tmpDir() + "/" + version + ".tmp";
-            FSDataOutputStream os = fs.create(new Path(tmpPath));
+            FSDataOutputStream os = fs.create(new Path(tmpPath), true);
             Output output = new Output(os);
             _serializer.writeObject(output, snapshot);
             output.flush();
