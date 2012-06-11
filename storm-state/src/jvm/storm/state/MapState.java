@@ -1,6 +1,5 @@
 package storm.state;
 
-import backtype.storm.task.TopologyContext;
 import clojure.lang.IPersistentMap;
 import clojure.lang.MapEntry;
 import clojure.lang.PersistentHashMap;

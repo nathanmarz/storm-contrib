@@ -1,6 +1,5 @@
 package storm.state;
 
-import backtype.storm.task.TopologyContext;
 import clojure.lang.IPersistentVector;
 import clojure.lang.PersistentVector;
 import clojure.lang.SeqIterator;

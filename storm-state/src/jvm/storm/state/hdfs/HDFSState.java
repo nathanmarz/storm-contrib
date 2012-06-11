@@ -55,6 +55,7 @@ public class HDFSState {
         HDFSUtils.mkdirs(_fs, logDir());
         
         _serializer = new Kryo();
+        _serializer.setReferences(false);
         sers.apply(_serializer);
         _serializer.register(Commit.class);
         _serializer.register(Snapshot.class);
