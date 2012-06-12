@@ -30,7 +30,8 @@ public class HDFSState {
     public static final int DEFAULT_AUTO_COMPACT_BYTES = 10 * 1024 * 1024;
         
     List<Transaction> _pendingTransactions = new ArrayList<Transaction>();
-    Kryo _serializer;
+    Kryo _fgSerializer;
+    Kryo _bgSerializer;
     BigInteger _currVersion;
     
     FileSystem _fs;
@@ -55,7 +56,8 @@ public class HDFSState {
         HDFSUtils.mkdirs(_fs, snapshotDir());
         HDFSUtils.mkdirs(_fs, logDir());
         
-        _serializer = makeKryo(sers);
+        _fgSerializer = makeKryo(sers);
+        _bgSerializer = makeKryo(sers);
         cleanup();
     }
     
@@ -125,7 +127,7 @@ public class HDFSState {
         if(latestSnapshot==null) {
             state.setState(null);
         } else {
-            Snapshot snapshot = readSnapshot(_fs, latestSnapshot);
+            Snapshot snapshot = readSnapshot(_fs, latestSnapshot, _fgSerializer);
             state.setState(snapshot.snapshot);
             version = snapshot.txid;
         }
@@ -134,7 +136,7 @@ public class HDFSState {
         _writtenSinceCompaction = 0;
         for(Long l: txLogs) {
             if(l > latestSnapshot) {
-                HDFSLog.LogReader r = HDFSLog.open(_fs, txlogPath(l), _serializer);
+                HDFSLog.LogReader r = HDFSLog.open(_fs, txlogPath(l), _fgSerializer);
                 while(true) {
                     Commit c = (Commit) r.read();
                     if(c==null) break;
@@ -153,7 +155,6 @@ public class HDFSState {
     private long latestSnapshotOrLogVersion() {
         Long latestSnapshot = latestSnapshot();
         Long latestTxlog = latestTxlog();
-        long newTxLogVersion;
         if(latestSnapshot==null) latestSnapshot = -1L;
         if(latestTxlog==null) latestTxlog = -1L;
         return Math.max(latestSnapshot, latestTxlog);
@@ -164,13 +165,13 @@ public class HDFSState {
             _openLog.close();
         }
         long newTxLogVersion = latestSnapshotOrLogVersion() + 1;
-        _openLog = HDFSLog.create(_fs, txlogPath(newTxLogVersion), _serializer);        
+        _openLog = HDFSLog.create(_fs, txlogPath(newTxLogVersion), _fgSerializer);        
         
     }
     
     public void compact(State state) {
         Object snapshot = state.getSnapshot();
-        long version = prepareCompact(snapshot);
+        long version = prepareCompact();
         doCompact(version, new Snapshot(_currVersion, snapshot));        
     }
     
@@ -179,7 +180,7 @@ public class HDFSState {
         if(_executor==null) {
             throw new RuntimeException("Need to configure with an executor to run compactions in the background");
         }
-        final long version = prepareCompact(immutableSnapshot);
+        final long version = prepareCompact();
         final Snapshot snapshot = new Snapshot(_currVersion, immutableSnapshot);
         _executor.execute(new Runnable() {
             @Override
@@ -189,7 +190,7 @@ public class HDFSState {
         });
     }
     
-    private long prepareCompact(Object immutableSnapshot) {
+    private long prepareCompact() {
         //TODO: maybe it's better to skip the compaction if it's currently going on (rather than block here)
         try {
             _compactionWaiter.acquire();
@@ -206,7 +207,7 @@ public class HDFSState {
 
     private void doCompact(long version, Snapshot snapshot) {
         try {
-            writeSnapshot(_fs, version, snapshot);
+            writeSnapshot(_fs, version, snapshot, _bgSerializer);
             cleanup();
         } finally {
             _compactionWaiter.release();
@@ -305,12 +306,12 @@ public class HDFSState {
         }        
     }
     
-    private Snapshot readSnapshot(FileSystem fs, long version) {
+    private Snapshot readSnapshot(FileSystem fs, long version, Kryo kryo) {
         FSDataInputStream in = null;
         try {
             in = fs.open(new Path(snapshotPath(version)));
             Input input = new Input(in);
-            Snapshot ret = _serializer.readObject(input, Snapshot.class);
+            Snapshot ret = kryo.readObject(input, Snapshot.class);
             input.close();
             return ret;
         } catch (IOException e) {
@@ -318,13 +319,13 @@ public class HDFSState {
         }
     }
     
-    private void writeSnapshot(FileSystem fs, long version, Snapshot snapshot) {
+    private void writeSnapshot(FileSystem fs, long version, Snapshot snapshot, Kryo kryo) {
         try {
             String finalPath = snapshotPath(version);
             String tmpPath = tmpDir() + "/" + version + ".tmp";
             FSDataOutputStream os = fs.create(new Path(tmpPath), true);
             Output output = new Output(os);
-            _serializer.writeObject(output, snapshot);
+            kryo.writeObject(output, snapshot);
             output.flush();
             output.close();
             fs.rename(new Path(tmpPath), new Path(finalPath));
