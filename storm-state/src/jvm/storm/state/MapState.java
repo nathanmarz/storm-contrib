@@ -93,10 +93,13 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
     }
     
     public MapState(Map conf, String fsLocation, Serializations sers) {
-        sers = sers.clone();
-        sers.add(Put.class).add(Remove.class).add(Clear.class);
-        _state = new HDFSState(conf, fsLocation, sers);
+        _state = new HDFSState(conf, fsLocation, getSers(sers));
         _state.resetToLatest(this);
+    }
+    
+    public static Serializations getSers(Serializations base) {
+        Serializations ret = base.clone();
+        return ret.add(Put.class).add(Remove.class).add(Clear.class);
     }
 
     public void setExecutor(Executor e) {

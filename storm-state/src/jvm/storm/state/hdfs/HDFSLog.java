@@ -60,7 +60,7 @@ public class HDFSLog {
         
         public void sync() {
             try {
-                LOG.info("Syncing to fs");
+                //LOG.info("Syncing to fs");
                 //this doesn't work in local mode...?
                 // this doesn't work on the cluster either...
                 _writer.syncFs();

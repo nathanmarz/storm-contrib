@@ -125,7 +125,7 @@ public class MapExample {
     
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new ThrottledWordSpout(7, 8000), 8);
+        builder.setSpout("spout", new ThrottledWordSpout(7, 32000), 8);
         builder.setBolt("counter", new StatefulBoltExecutor(new WordCount(), "hdfs://ip-10-202-7-99.ec2.internal:8020/tmp/data"), 8)
                 .fieldsGrouping("spout", new Fields("word"));
         

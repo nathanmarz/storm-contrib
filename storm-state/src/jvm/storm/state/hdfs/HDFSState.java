@@ -55,20 +55,26 @@ public class HDFSState {
         HDFSUtils.mkdirs(_fs, snapshotDir());
         HDFSUtils.mkdirs(_fs, logDir());
         
-        _serializer = new Kryo();
-        _serializer.setReferences(false);
-        sers.apply(_serializer);
-        _serializer.register(Commit.class);
-        _serializer.register(Snapshot.class);
-        _serializer.register(BigInteger.class, new BigIntegerSerializer());
+        _serializer = makeKryo(sers);
+        cleanup();
+    }
+    
+    public static Kryo makeKryo(Serializations sers) {
+        Kryo ret = new Kryo();
+        ret.
+        ret.setReferences(false);
+        sers.apply(ret);
+        ret.register(Commit.class);
+        ret.register(Snapshot.class);
+        ret.register(BigInteger.class, new BigIntegerSerializer());
         try {
             // automatically support clojure collections since those are useful
             // for implementing these kinds of structures
-            JavaBridge.registerCollections(_serializer);
+            JavaBridge.registerCollections(ret);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        cleanup();
+        return ret;
     }
     
     Executor _executor = null;
