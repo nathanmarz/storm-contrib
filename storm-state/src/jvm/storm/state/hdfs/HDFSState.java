@@ -59,7 +59,7 @@ public class HDFSState {
         _autoCompactFrequencyBytes = autoCompactFrequency.longValue();
         
         HDFSUtils.mkdirs(_fs, tmpDir());
-        HDFSUtils.mkdirs(_fs, snapshotDir());
+        HDFSUtils.mkdirs(_fs, checkpointDir());
         HDFSUtils.mkdirs(_fs, logDir());
         
         _fgSerializer = makeKryo(sers);
@@ -72,7 +72,7 @@ public class HDFSState {
         ret.setReferences(false);
         sers.apply(ret);
         ret.register(Commit.class);
-        ret.register(Snapshot.class);
+        ret.register(Checkpoint.class);
         ret.register(BigInteger.class, new BigIntegerSerializer());
         ret.register(byte[].class);
         ret.register(ArrayList.class, new ArrayListSerializer(ret));
@@ -110,6 +110,9 @@ public class HDFSState {
     }
     
     public void commit(BigInteger txid, State state) {
+        // TODO: need to remember the snapshot since last commit.
+        // "checkpoint" should be snapshot + last commit (makes it possible to 
+        // roll back with transactional topologies
         Commit commit = new Commit(txid, _pendingTransactions);
         _pendingTransactions = new ArrayList<Transaction>();
         if(txid==null || txid.equals(getVersion())) {
@@ -134,20 +137,20 @@ public class HDFSState {
     public void resetToLatest(State state) {
        // TODO: probably much better to serialize the snapshot directly into the output stream to prevent
         // so much more memory usage
-        Long latestSnapshot = latestSnapshot();
+        Long latestCheckpoint = latestCheckpoint();
         BigInteger version = BigInteger.ZERO;
-        if(latestSnapshot==null) {
+        if(latestCheckpoint==null) {
             state.setState(null);
         } else {
-            Snapshot snapshot = readSnapshot(_fs, latestSnapshot, _fgSerializer);
-            state.setState(snapshot.snapshot);
-            version = snapshot.txid;
+            Checkpoint checkpoint = readCheckpoint(_fs, latestCheckpoint, _fgSerializer);
+            state.setState(checkpoint.snapshot);
+            version = checkpoint.txid;
         }
-        if(latestSnapshot==null) latestSnapshot = -1L;
+        if(latestCheckpoint==null) latestCheckpoint = -1L;
         List<Long> txLogs = allTxlogs();
         _writtenSinceCompaction = 0;
         for(Long l: txLogs) {
-            if(l > latestSnapshot) {
+            if(l > latestCheckpoint) {
                 HDFSLog.LogReader r = HDFSLog.open(_fs, txlogPath(l), _fgSerializer);
                 while(true) {
                     Commit c = (Commit) r.read();
@@ -164,19 +167,19 @@ public class HDFSState {
         rotateLog();
     }
     
-    private long latestSnapshotOrLogVersion() {
-        Long latestSnapshot = latestSnapshot();
+    private long latestCheckpointOrLogVersion() {
+        Long latestCheckpoint = latestCheckpoint();
         Long latestTxlog = latestTxlog();
-        if(latestSnapshot==null) latestSnapshot = -1L;
+        if(latestCheckpoint==null) latestCheckpoint = -1L;
         if(latestTxlog==null) latestTxlog = -1L;
-        return Math.max(latestSnapshot, latestTxlog);
+        return Math.max(latestCheckpoint, latestTxlog);
     }
     
     private void rotateLog() {
         if(_openLog!=null) {
             _openLog.close();
         }
-        long newTxLogVersion = latestSnapshotOrLogVersion() + 1;
+        long newTxLogVersion = latestCheckpointOrLogVersion() + 1;
         _openLog = HDFSLog.create(_fs, txlogPath(newTxLogVersion), _fgSerializer);        
         
     }
@@ -184,7 +187,7 @@ public class HDFSState {
     public void compact(State state) {
         Object snapshot = state.getSnapshot();
         long version = prepareCompact();
-        doCompact(version, new Snapshot(_currVersion, snapshot));        
+        doCompact(version, new Checkpoint(_currVersion, snapshot));        
     }
     
     public void compactAsync(State state) {
@@ -193,11 +196,11 @@ public class HDFSState {
             throw new RuntimeException("Need to configure with an executor to run compactions in the background");
         }
         final long version = prepareCompact();
-        final Snapshot snapshot = new Snapshot(_currVersion, immutableSnapshot);
+        final Checkpoint checkpoint = new Checkpoint(_currVersion, immutableSnapshot);
         _executor.execute(new Runnable() {
             @Override
             public void run() {
-                doCompact(version, snapshot);
+                doCompact(version, checkpoint);
             }            
         });
     }
@@ -217,9 +220,9 @@ public class HDFSState {
         return snapVersion;
     }
 
-    private void doCompact(long version, Snapshot snapshot) {
+    private void doCompact(long version, Checkpoint checkpoint) {
         try {
-            writeSnapshot(_fs, version, snapshot, _bgSerializer);
+            writeCheckpoint(_fs, version, checkpoint, _bgSerializer);
             cleanup();
         } finally {
             _compactionWaiter.release();
@@ -227,16 +230,16 @@ public class HDFSState {
     }
     
     
-    public static class Snapshot {
+    public static class Checkpoint {
         BigInteger txid;
         Object snapshot;
         
         //for kryo
-        public Snapshot() {
+        public Checkpoint() {
             
         }
         
-        public Snapshot(BigInteger txid, Object snapshot) {
+        public Checkpoint(BigInteger txid, Object snapshot) {
             this.txid = txid;
             this.snapshot = snapshot;
         }
@@ -265,32 +268,32 @@ public class HDFSState {
         return _rootDir + "/tmp";
     }
     
-    private String snapshotDir() {
-        return _rootDir + "/snapshots";
+    private String checkpointDir() {
+        return _rootDir + "/checkpoints";
     }
     
     private String logDir() {
         return _rootDir + "/txlog";
     }
     
-    private String snapshotPath(Long version) {
-        return snapshotDir() + "/" + version + ".snapshot";
+    private String checkpointPath(Long version) {
+        return checkpointDir() + "/" + version + ".checkpoint";
     }
     
     private String txlogPath(Long version) {
         return logDir() + "/" + version + ".txlog";
     }    
     
-    private List<Long> allSnaphots() {
-        return HDFSUtils.getSortedVersions(_fs, snapshotDir(), ".snapshot");
+    private List<Long> allCheckpoints() {
+        return HDFSUtils.getSortedVersions(_fs, checkpointDir(), ".checkpoint");
     }
 
     private List<Long> allTxlogs() {
         return HDFSUtils.getSortedVersions(_fs, logDir(), ".txlog");
     }    
     
-    private Long latestSnapshot() {
-        List<Long> all = allSnaphots();
+    private Long latestCheckpoint() {
+        List<Long> all = allCheckpoints();
         if(all.isEmpty()) return null;
         else return all.get(all.size()-1);
     }
@@ -302,12 +305,12 @@ public class HDFSState {
     }    
     
     private void cleanup() {
-        Long latest = latestSnapshot();
+        Long latest = latestCheckpoint();
         HDFSUtils.clearDir(_fs, tmpDir());
         if(latest!=null) {
-            for(Long s: allSnaphots()) {
+            for(Long s: allCheckpoints()) {
                 if(s < latest) {
-                    HDFSUtils.deleteFile(_fs, snapshotPath(s));
+                    HDFSUtils.deleteFile(_fs, checkpointPath(s));
                 }
             }
             for(Long t: allTxlogs()) {
@@ -318,12 +321,12 @@ public class HDFSState {
         }        
     }
     
-    private Snapshot readSnapshot(FileSystem fs, long version, Kryo kryo) {
+    private Checkpoint readCheckpoint(FileSystem fs, long version, Kryo kryo) {
         FSDataInputStream in = null;
         try {
-            in = fs.open(new Path(snapshotPath(version)));
+            in = fs.open(new Path(checkpointPath(version)));
             Input input = new Input(in);
-            Snapshot ret = kryo.readObject(input, Snapshot.class);
+            Checkpoint ret = kryo.readObject(input, Checkpoint.class);
             input.close();
             return ret;
         } catch (IOException e) {
@@ -331,13 +334,13 @@ public class HDFSState {
         }
     }
     
-    private void writeSnapshot(FileSystem fs, long version, Snapshot snapshot, Kryo kryo) {
+    private void writeCheckpoint(FileSystem fs, long version, Checkpoint checkpoint, Kryo kryo) {
         try {
-            String finalPath = snapshotPath(version);
+            String finalPath = checkpointPath(version);
             String tmpPath = tmpDir() + "/" + version + ".tmp";
             FSDataOutputStream os = fs.create(new Path(tmpPath), true);
             Output output = new Output(os);
-            kryo.writeObject(output, snapshot);
+            kryo.writeObject(output, checkpoint);
             output.flush();
             output.close();
             fs.rename(new Path(tmpPath), new Path(finalPath));
