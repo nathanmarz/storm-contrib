@@ -1,5 +1,9 @@
 package storm.state.hdfs;
 
+import backtype.storm.serialization.types.ArrayListSerializer;
+import backtype.storm.serialization.types.HashMapSerializer;
+import backtype.storm.serialization.types.HashSetSerializer;
+import backtype.storm.tuple.Values;
 import carbonite.JavaBridge;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -8,6 +12,8 @@ import com.esotericsoftware.kryo.serializers.DefaultSerializers.BigIntegerSerial
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -68,6 +74,12 @@ public class HDFSState {
         ret.register(Commit.class);
         ret.register(Snapshot.class);
         ret.register(BigInteger.class, new BigIntegerSerializer());
+        ret.register(byte[].class);
+        ret.register(ArrayList.class, new ArrayListSerializer(ret));
+        ret.register(HashMap.class, new HashMapSerializer(ret));
+        ret.register(HashSet.class, new HashSetSerializer(ret));
+        ret.register(Values.class);
+        
         try {
             // automatically support clojure collections since those are useful
             // for implementing these kinds of structures
