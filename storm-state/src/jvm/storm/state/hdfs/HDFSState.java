@@ -61,7 +61,6 @@ public class HDFSState {
     
     public static Kryo makeKryo(Serializations sers) {
         Kryo ret = new Kryo();
-        ret.
         ret.setReferences(false);
         sers.apply(ret);
         ret.register(Commit.class);
