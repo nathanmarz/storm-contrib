@@ -75,12 +75,12 @@ public class MapExample {
         }
     }
     
-    public static class WordCount extends BaseStatefulBolt {
+    public static class WordCount extends BaseStatefulBolt<MapState> {
         MapState _state;
         
         @Override
-        public void prepare(Map conf, TopologyContext context, State state) {
-            _state = (MapState) state;
+        public void prepare(Map conf, TopologyContext context, MapState state) {
+            _state = state;
         }
 
         @Override

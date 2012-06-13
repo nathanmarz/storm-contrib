@@ -17,9 +17,9 @@ import storm.state.State;
  * 
  * finishBatch is called once all state updates are complete. then this bolt can emit more tuples into the topology
  */
-public interface IStatefulTransactionalBolt extends IComponent, IStateful {
+public interface IStatefulTransactionalBolt<T extends State> extends IComponent, IStateful {
     void prepare(Map conf, TopologyContext context, TransactionAttempt attempt);
     void execute(Tuple tuple);
-    void updateState(State state);
-    void finishBatch(State state, BatchOutputCollector collector);    
+    void updateState(T state);
+    void finishBatch(T state, BatchOutputCollector collector);    
 }

@@ -14,11 +14,11 @@ import storm.state.State;
  * Can have tuples be acked immediately (without waiting for commit) via
  * topology.state.immediate.ack config (defaults to false). Otherwise, it acks after commit.
  */
-public interface IStatefulBolt extends IComponent, IStateful {
+public interface IStatefulBolt<T extends State> extends IComponent, IStateful {
     public static final String TOPOLOGY_STATE_COMMIT_FREQ_SECS = "topology.state.commit.freq.secs";
     public static final String TOPOLOGY_STATE_IMMEDIATE_ACK = "topology.state.immediate.ack";
     
-    void prepare(Map conf, TopologyContext context, State state);
+    void prepare(Map conf, TopologyContext context, T state);
     /**
      * Called for each tuple received. Should update the state here.
      */

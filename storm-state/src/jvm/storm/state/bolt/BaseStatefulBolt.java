@@ -3,9 +3,10 @@ package storm.state.bolt;
 import backtype.storm.topology.BasicOutputCollector;
 import java.util.Map;
 import storm.state.Serializations;
+import storm.state.State;
 
 
-public abstract class BaseStatefulBolt implements IStatefulBolt {
+public abstract class BaseStatefulBolt<T extends State> implements IStatefulBolt<T> {
 
     @Override
     public void preCommit(BasicOutputCollector collector) {
