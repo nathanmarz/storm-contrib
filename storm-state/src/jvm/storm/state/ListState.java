@@ -7,14 +7,12 @@ import java.math.BigInteger;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import storm.state.hdfs.HDFSState;
 
 public class ListState<T> extends AbstractList<T> implements State {
     public static class Factory implements StateFactory {
         @Override
-        public State makeState(Map conf, String rootDir, Serializations sers) {
-            return new ListState(conf, rootDir, sers);
+        public State makeState(Map conf, IBackingStore store, Serializations sers) {
+            return new ListState(conf, store, sers);
         }        
     }
         
@@ -70,62 +68,63 @@ public class ListState<T> extends AbstractList<T> implements State {
         }
     }
     
-    HDFSState _state;
+    IBackingStore _store;
     
-    public ListState(Map conf, String dfsDir) {
-        this(conf, dfsDir, new Serializations());
+    public ListState(Map conf, IBackingStore store) {
+        this(conf, store, new Serializations());
     }
     
-    public ListState(Map conf, String dfsDir, Serializations sers) {
+    public ListState(Map conf, IBackingStore store, Serializations sers) {
         sers = sers.clone();
-        sers.add(Set.class).add(Clear.class).add(Add.class);        
-        _state = new HDFSState(conf, dfsDir, sers);
-        _state.resetToLatest(this);
+        sers.add(Set.class).add(Clear.class).add(Add.class); 
+        _store = store;
+        _store.init(conf, sers);
+        _store.resetToLatest(this);
     }
     
     @Override
     public Object getSnapshot() {
         return _cache;
     }
-    
-    public void setExecutor(Executor e) {
-        _state.setExecutor(e);
-    }
-    
+        
     public void commit() {
-        _state.commit(this);
+        _store.commit(this);
     }
 
     public void commit(BigInteger txid) {
-        _state.commit(txid, this);
+        _store.commit(txid, this);
     }    
     
     public void compact() {
-        _state.compact(this);
+        _store.compact(this);
     }
 
     public void compactAsync() {
-        _state.compactAsync(this);
-    }    
+        _store.compactAsync(this);
+    }
+    
+    public void rollback() {
+        _store.rollback(this);
+    }
     
     @Override
     public void close() {
-        _state.close();
+        _store.close();
     }
 
     @Override
     public BigInteger getVersion() {
-        return _state.getVersion();
+        return _store.getVersion();
     }    
 
     @Override
     public void clear() {
-        _state.appendAndApply(new Clear(), this);
+        _store.appendAndApply(new Clear(), this);
     }
     
     @Override
     public boolean add(T e) {
-        return (Boolean) _state.appendAndApply(new Add(e), this);
+        return (Boolean) _store.appendAndApply(new Add(e), this);
     }        
     
     @Override
@@ -135,7 +134,7 @@ public class ListState<T> extends AbstractList<T> implements State {
     
     @Override
     public T set(int i, T e) {
-        return (T) _state.appendAndApply(new Set(i, e), this);
+        return (T) _store.appendAndApply(new Set(i, e), this);
     }
     
     @Override

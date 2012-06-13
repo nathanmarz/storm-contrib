@@ -12,15 +12,14 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import storm.state.MapState;
-import storm.state.Serializations;
 import storm.state.State;
 import storm.state.StateFactory;
-import storm.state.bolt.IStatefulBolt;
+import storm.state.bolt.BaseStatefulBolt;
 import storm.state.bolt.StatefulBoltExecutor;
+import storm.state.hdfs.HDFSStore;
 
 public class MapExample {
     
@@ -76,7 +75,7 @@ public class MapExample {
         }
     }
     
-    public static class WordCount implements IStatefulBolt {
+    public static class WordCount extends BaseStatefulBolt {
         MapState _state;
         
         @Override
@@ -99,34 +98,19 @@ public class MapExample {
         }
 
         @Override
-        public void cleanup() {
-        }
-
-        @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        }
-
-        @Override
-        public Map<String, Object> getComponentConfiguration() {
-            return null;
         }
 
         @Override
         public StateFactory getStateBuilder() {
             return new MapState.Factory();
         }
-
-        @Override
-        public Serializations getSerializations() {
-            return new Serializations();
-        }
-        
     }
     
     public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("spout", new ThrottledWordSpout(7, 32000), 8);
-        builder.setBolt("counter", new StatefulBoltExecutor(new WordCount(), "hdfs://ip-10-202-7-99.ec2.internal:8020/tmp/data"), 8)
+        builder.setBolt("counter", new StatefulBoltExecutor(new WordCount(), new HDFSStore("hdfs://ip-10-202-7-99.ec2.internal:8020/tmp/data")), 8)
                 .fieldsGrouping("spout", new Fields("word"));
         
         Config conf = new Config();

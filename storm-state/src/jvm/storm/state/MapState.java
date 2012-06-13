@@ -9,20 +9,18 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.Executor;
-import storm.state.hdfs.HDFSState;
 
 
 public class MapState<K, V> extends AbstractMap<K, V> implements State {    
-    public static class Factory implements StateFactory {
+    public static class Factory implements StateFactory {         
         @Override
-        public State makeState(Map conf, String rootDir, Serializations sers) {
-            return new MapState(conf, rootDir, sers);
+        public State makeState(Map conf, IBackingStore store, Serializations sers) {
+            return new MapState(conf, store, sers);
         }        
     }  
     
     IPersistentMap _cache;
-    HDFSState _state;
+    IBackingStore _store;
 
     @Override
     public void setState(Object snapshot) {
@@ -88,63 +86,64 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
         }        
     }    
     
-    public MapState(Map conf, String fsLocation) {
-        this(conf, fsLocation, new Serializations());
+    public MapState(Map conf, IBackingStore store) {
+        this(conf, store, new Serializations());
     }
     
-    public MapState(Map conf, String fsLocation, Serializations sers) {
-        _state = new HDFSState(conf, fsLocation, getSers(sers));
-        _state.resetToLatest(this);
+    public MapState(Map conf, IBackingStore store, Serializations sers) {        
+        _store = store;
+        _store.init(conf, sers);
+        _store.resetToLatest(this);
     }
     
     public static Serializations getSers(Serializations base) {
         Serializations ret = base.clone();
         return ret.add(Put.class).add(Remove.class).add(Clear.class);
     }
-
-    public void setExecutor(Executor e) {
-        _state.setExecutor(e);
-    }    
     
     public void commit() {
-        _state.commit(this);
+        _store.commit(this);
     }
     
     public void commit(BigInteger txid) {
-        _state.commit(txid, this);
+        _store.commit(txid, this);
     }    
     
     public void compact() {
-        _state.compact(this);
+        _store.compact(this);
     }
     
     public void compactAsync() {
-        _state.compactAsync(this);
+        _store.compactAsync(this);
+    }
+    
+    public void rollback() {
+        _store.rollback(this);
     }
 
     @Override
     public void close() {
-        _state.close();
+        _store.close();
     }
 
     @Override
     public BigInteger getVersion() {
-        return _state.getVersion();
-    }    
+        return _store.getVersion();
+    }
 
     @Override
     public V put(K key, V value) {
-        return (V) _state.appendAndApply(new Put(key, value), this);
+        return (V) _store.appendAndApply(new Put(key, value), this);
     }
 
     @Override
     public V remove(Object key) {
-        return (V) _state.appendAndApply(new Remove(key), this);
+        return (V) _store.appendAndApply(new Remove(key), this);
     }
 
     @Override
     public void clear() {
-        _state.appendAndApply(new Clear(), this);
+        _store.appendAndApply(new Clear(), this);
     }
     
     public Iterator<MapEntry> iterator() {

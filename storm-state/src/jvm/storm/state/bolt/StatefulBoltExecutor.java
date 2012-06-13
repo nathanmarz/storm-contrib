@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import storm.state.IPartitionedBackingStore;
 import storm.state.PartitionedState;
 import storm.state.State;
 
@@ -19,20 +20,20 @@ import storm.state.State;
 public class StatefulBoltExecutor implements IRichBolt {
     IStatefulBolt _delegate;
     State _state;
-    String _rootDir;
     transient BasicOutputCollector _collector;
     OutputCollector _rootCollector;
     Boolean _immediateAck;
     List<Tuple> _pendingAcks = new ArrayList<Tuple>();
+    IPartitionedBackingStore _store;
     
-    public StatefulBoltExecutor(IStatefulBolt delegate, String dir) {
+    public StatefulBoltExecutor(IStatefulBolt delegate, IPartitionedBackingStore store) {
         _delegate = delegate;
-        _rootDir = dir;
+        _store = store;
     }
 
     @Override
     public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
-        _state = PartitionedState.getState(conf, context, _rootDir, _delegate.getStateBuilder(), _delegate.getSerializations());
+        _state = PartitionedState.getState(conf, context, _store, _delegate.getStateBuilder(), _delegate.getSerializations());
         _delegate.prepare(conf, context, _state);
         _rootCollector = collector;
         _collector = new BasicOutputCollector(collector);
@@ -75,7 +76,7 @@ public class StatefulBoltExecutor implements IRichBolt {
         Map ret = _delegate.getComponentConfiguration();
         if(ret==null) ret = new HashMap();
         Number commitFreq = (Number) ret.get(IStatefulBolt.TOPOLOGY_STATE_COMMIT_FREQ_SECS);
-        if(commitFreq == null) commitFreq = 5;
+        if(commitFreq == null) commitFreq = 1;
         ret.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, commitFreq.intValue());
         return ret;
     }

@@ -24,14 +24,15 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.log4j.Logger;
+import storm.state.IBackingStore;
 import storm.state.hdfs.HDFSLog.LogWriter;
 import storm.state.Serializations;
 import storm.state.State;
 import storm.state.Transaction;
 
 
-public class HDFSState {
-    public static final Logger LOG = Logger.getLogger(HDFSState.class);
+public class HDFSBackingStore implements IBackingStore {
+    public static final Logger LOG = Logger.getLogger(HDFSBackingStore.class);
     public static final String AUTO_COMPACT_BYTES_CONFIG = "topology.state.auto.compact.bytes";
     public static final int DEFAULT_AUTO_COMPACT_BYTES = 10 * 1024 * 1024;
         
@@ -48,12 +49,16 @@ public class HDFSState {
     Semaphore _compactionWaiter = new Semaphore(1);
     long _writtenSinceCompaction = 0;
     long _autoCompactFrequencyBytes;
+    Object _snapshotBeforeLastCommit = null;
+    Commit _lastCommit = null;
         
-    public HDFSState(Map conf, String dfsDir, Serializations sers) {
+    public HDFSBackingStore(String dfsDir) {
         _fs = HDFSUtils.getFS(dfsDir);
         _isLocal = _fs instanceof RawLocalFileSystem;
-        _rootDir = new Path(dfsDir).toString();
-        
+        _rootDir = new Path(dfsDir).toString();        
+    }
+    
+    public void init(Map conf, Serializations sers) {
         Number autoCompactFrequency = (Number) conf.get(AUTO_COMPACT_BYTES_CONFIG);
         if(autoCompactFrequency == null) autoCompactFrequency = DEFAULT_AUTO_COMPACT_BYTES;
         _autoCompactFrequencyBytes = autoCompactFrequency.longValue();
@@ -64,7 +69,7 @@ public class HDFSState {
         
         _fgSerializer = makeKryo(sers);
         _bgSerializer = makeKryo(sers);
-        cleanup();
+        cleanup();        
     }
     
     public static Kryo makeKryo(Serializations sers) {
@@ -110,16 +115,16 @@ public class HDFSState {
     }
     
     public void commit(BigInteger txid, State state) {
-        // TODO: need to remember the snapshot since last commit.
-        // "checkpoint" should be snapshot + last commit (makes it possible to 
-        // roll back with transactional topologies
-        Commit commit = new Commit(txid, _pendingTransactions);
-        _pendingTransactions = new ArrayList<Transaction>();
-        if(txid==null || txid.equals(getVersion())) {
+        if(!_pendingTransactions.isEmpty()) {
+            Commit commit = new Commit(txid, _pendingTransactions);
+            _snapshotBeforeLastCommit = state.getSnapshot();
+            _lastCommit = commit;
+            _pendingTransactions = new ArrayList<Transaction>();
+                        
             _writtenSinceCompaction += _openLog.write(commit);
             if(_isLocal) {
                 // see HADOOP-7844
-                rotateLog();        
+                rotateLog();
             } else {
                 _openLog.sync();            
             }
@@ -128,9 +133,6 @@ public class HDFSState {
                 compactAsync(state);
                 _writtenSinceCompaction = 0;
             }
-        } else {
-            // we've done this update before, so reset the state
-            resetToLatest(state);
         }
     }
     
@@ -138,12 +140,20 @@ public class HDFSState {
        // TODO: probably much better to serialize the snapshot directly into the output stream to prevent
         // so much more memory usage
         Long latestCheckpoint = latestCheckpoint();
-        BigInteger version = BigInteger.ZERO;
+        BigInteger version;
         if(latestCheckpoint==null) {
             state.setState(null);
+            _snapshotBeforeLastCommit = null;
+            _lastCommit = null;
+            version = null;
         } else {
             Checkpoint checkpoint = readCheckpoint(_fs, latestCheckpoint, _fgSerializer);
             state.setState(checkpoint.snapshot);
+            _snapshotBeforeLastCommit = checkpoint.snapshot;
+            _lastCommit = checkpoint.commit;
+            for(Transaction t: checkpoint.commit.transactions) {
+                t.apply(state);
+            }
             version = checkpoint.txid;
         }
         if(latestCheckpoint==null) latestCheckpoint = -1L;
@@ -156,6 +166,8 @@ public class HDFSState {
                     Commit c = (Commit) r.read();
                     if(c==null) break;
                     version = c.txid;
+                    _snapshotBeforeLastCommit = state.getSnapshot();
+                    _lastCommit = c;
                     for(Transaction t: c.transactions) {
                         t.apply(state);
                     }
@@ -185,18 +197,16 @@ public class HDFSState {
     }
     
     public void compact(State state) {
-        Object snapshot = state.getSnapshot();
         long version = prepareCompact();
-        doCompact(version, new Checkpoint(_currVersion, snapshot));        
+        doCompact(version, new Checkpoint(_currVersion, _snapshotBeforeLastCommit, _lastCommit));        
     }
     
     public void compactAsync(State state) {
-        Object immutableSnapshot = state.getSnapshot();
         if(_executor==null) {
             throw new RuntimeException("Need to configure with an executor to run compactions in the background");
         }
         final long version = prepareCompact();
-        final Checkpoint checkpoint = new Checkpoint(_currVersion, immutableSnapshot);
+        final Checkpoint checkpoint = new Checkpoint(_currVersion, _snapshotBeforeLastCommit, _lastCommit);
         _executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -229,19 +239,24 @@ public class HDFSState {
         }
     }
     
-    
+    /**
+     * A checkpoint is a snapshot + a commit to get to that transaction id. Because it stores the snapshot
+     * before the commit, it can be rolled back to a prior version.
+     */
     public static class Checkpoint {
         BigInteger txid;
         Object snapshot;
+        Commit commit;
         
         //for kryo
         public Checkpoint() {
             
         }
         
-        public Checkpoint(BigInteger txid, Object snapshot) {
+        public Checkpoint(BigInteger txid, Object snapshot, Commit commit) {
             this.txid = txid;
             this.snapshot = snapshot;
+            this.commit = commit;
         }
     }
     
@@ -258,6 +273,19 @@ public class HDFSState {
             this.txid = txid;
             this.transactions = transactions;
         }        
+    }
+    
+    public void rollback(State state) {
+        if(_currVersion==null) {
+            throw new RuntimeException("Cannot rollback a non-versioned state (and can't rollback twice without a commit)");
+        }
+        if(!_pendingTransactions.isEmpty()) {
+            throw new RuntimeException("Cannot rollback when there are uncommitted transactions");
+        }
+        state.setState(_snapshotBeforeLastCommit);
+        _lastCommit = null;
+        _snapshotBeforeLastCommit = null;
+        _currVersion = null;
     }
     
     public void close() {
