@@ -49,7 +49,7 @@ public class HDFSLog {
             int amtWritten = _output.total();
             _key.set(_output.getBuffer(), 0, amtWritten);
             try {
-                LOG.info("Writing to log: " + o);
+                LOG.debug("Writing to log: " + o);
                 _writer.append(_key, NullWritable.get());
                 return amtWritten;
             } catch (IOException e) {
@@ -115,7 +115,7 @@ public class HDFSLog {
                     return _kryo.readClassAndObject(_input);
                 }
             } catch(EOFException e) {
-                LOG.warn("Txlog is corrupt, skipping the rest of it (writer may have crashed in middle of writing", e);
+                LOG.debug("Skipping the rest of transaction log (either writer crashed in middle of writing or reached actual end)", e);
                 return null;
             } catch (IOException e) {
                 throw new RuntimeException(e);

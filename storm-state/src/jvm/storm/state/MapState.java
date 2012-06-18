@@ -5,6 +5,7 @@ import clojure.lang.MapEntry;
 import clojure.lang.PersistentHashMap;
 import java.math.BigInteger;
 import java.util.AbstractMap;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -84,7 +85,11 @@ public class MapState<K, V> extends AbstractMap<K, V> implements State {
            state._cache = PersistentHashMap.EMPTY;
            return null;
         }        
-    }    
+    }
+    
+    public MapState(IBackingStore store) {
+        this(new HashMap(), store);
+    }
     
     public MapState(Map conf, IBackingStore store) {
         this(conf, store, new Serializations());

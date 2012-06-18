@@ -43,6 +43,7 @@ public class StatefulBoltExecutor implements IRichBolt {
 
     @Override
     public void execute(Tuple tuple) {
+        _collector.setContext(tuple);
         if(tuple.getSourceStreamId().equals(Constants.SYSTEM_TICK_STREAM_ID)) {
             _delegate.preCommit(_collector);
             _state.commit();

@@ -1,5 +1,6 @@
 (defproject storm/storm-state "0.8.0-SNAPSHOT"
   :source-path "src/clj"
+  :test-path "test/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
   :repositories {"cloudera" "https://repository.cloudera.com/artifactory/cloudera-repos/"}

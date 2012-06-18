@@ -50,6 +50,7 @@ public class HDFSBackingStore implements IBackingStore {
     long _writtenSinceCompaction = 0;
     long _autoCompactFrequencyBytes;
     Object _snapshotBeforeLastCommit = null;
+    Object _currSnapshot;
     Commit _lastCommit = null;
         
     public HDFSBackingStore(String dfsDir) {
@@ -115,24 +116,23 @@ public class HDFSBackingStore implements IBackingStore {
     }
     
     public void commit(BigInteger txid, State state) {
-        if(!_pendingTransactions.isEmpty()) {
-            Commit commit = new Commit(txid, _pendingTransactions);
-            _snapshotBeforeLastCommit = state.getSnapshot();
-            _lastCommit = commit;
-            _pendingTransactions = new ArrayList<Transaction>();
-                        
-            _writtenSinceCompaction += _openLog.write(commit);
-            if(_isLocal) {
-                // see HADOOP-7844
-                rotateLog();
-            } else {
-                _openLog.sync();            
-            }
-            _currVersion = txid;
-            if(_autoCompactFrequencyBytes > 0 && _writtenSinceCompaction > _autoCompactFrequencyBytes) {
-                compactAsync(state);
-                _writtenSinceCompaction = 0;
-            }
+        Commit commit = new Commit(txid, _pendingTransactions);
+        _snapshotBeforeLastCommit = _currSnapshot;
+        _currSnapshot = state.getSnapshot();
+        _lastCommit = commit;
+        _pendingTransactions = new ArrayList<Transaction>();
+
+        _writtenSinceCompaction += _openLog.write(commit);
+        if(_isLocal) {
+            // see HADOOP-7844
+            rotateLog();
+        } else {
+            _openLog.sync();            
+        }
+        _currVersion = txid;
+        if(_autoCompactFrequencyBytes > 0 && _writtenSinceCompaction > _autoCompactFrequencyBytes) {
+            compactAsync(state);
+            _writtenSinceCompaction = 0;
         }
     }
     
@@ -145,7 +145,7 @@ public class HDFSBackingStore implements IBackingStore {
             state.setState(null);
             _snapshotBeforeLastCommit = null;
             _lastCommit = null;
-            version = null;
+            version = BigInteger.ZERO;
         } else {
             Checkpoint checkpoint = readCheckpoint(_fs, latestCheckpoint, _fgSerializer);
             state.setState(checkpoint.snapshot);
@@ -154,6 +154,7 @@ public class HDFSBackingStore implements IBackingStore {
             for(Transaction t: checkpoint.commit.transactions) {
                 t.apply(state);
             }
+            _currSnapshot = state.getSnapshot();
             version = checkpoint.txid;
         }
         if(latestCheckpoint==null) latestCheckpoint = -1L;
@@ -171,6 +172,7 @@ public class HDFSBackingStore implements IBackingStore {
                     for(Transaction t: c.transactions) {
                         t.apply(state);
                     }
+                    _currSnapshot = state.getSnapshot();
                 }
                 _writtenSinceCompaction += r.amtRead();
             }

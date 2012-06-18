@@ -26,7 +26,7 @@ public class HDFSUtils {
         try {
             FileSystem ret = new Path(path).getFileSystem(new Configuration());
             if(ret instanceof LocalFileSystem) {
-                LOG.info("Using local filesystem and disabling checksums");
+                LOG.debug("Using local filesystem and disabling checksums");
                 ret = new RawLocalFileSystem();
                 try {
                     ((RawLocalFileSystem) ret).initialize(new URI("file://localhost/"), new Configuration());
