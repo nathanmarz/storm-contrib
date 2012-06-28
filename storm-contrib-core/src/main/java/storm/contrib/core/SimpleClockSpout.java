@@ -1,6 +1,7 @@
 package storm.contrib.core;
 
 import java.util.List;
+import java.util.Map;
 
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Fields;
@@ -30,17 +31,25 @@ public class SimpleClockSpout extends ClockSpout {
 	}
 
 	@Override
-	public List<Object> getTupleForTick(int i) {
+    public List<Object> getTupleForTick(long i) {
 		return Utils.tuple(i);
 	}
 
 	@Override
-	public long getDelayForTick(int i) {
+    public long getDelayForTick(long i) {
 		return delay;
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields("tick"));
 		declarer.declareStream(streamId, new Fields("tick"));
 	}
+
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        backtype.storm.Config conf = new backtype.storm.Config();
+
+        return conf;
+    }
 }
