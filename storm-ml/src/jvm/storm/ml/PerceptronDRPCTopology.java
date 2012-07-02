@@ -6,10 +6,10 @@ import backtype.storm.LocalCluster;
 import backtype.storm.LocalDRPC;
 import backtype.storm.StormSubmitter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import storm.ml.bolt.EvaluationBolt;
-import storm.ml.util.IVParser;
 
 public class PerceptronDRPCTopology {
     public static void main(String[] args) throws Exception {
@@ -24,9 +24,9 @@ public class PerceptronDRPCTopology {
 
             cluster.submitTopology("evaluation-demo", conf, builder.createLocalTopology(drpc));
 
-            List<List<Double>> input_vectors = IVParser.parse("input_vectors.txt");
-            for (List<Double> input_vector : input_vectors) {
-                System.out.println(String.format("%s -> %s", input_vector, drpc.execute("evaluate", input_vector.toString())));
+            List<String> input_vectors = get_input_vectors();
+            for (String input_vector : input_vectors) {
+                System.out.println(String.format("%s -> %s", input_vector, drpc.execute("evaluate", input_vector)));
             }
 
             cluster.shutdown();
@@ -35,5 +35,20 @@ public class PerceptronDRPCTopology {
             conf.setNumWorkers(3);
             StormSubmitter.submitTopology(args[0], conf, builder.createRemoteTopology());
         }
+    }
+
+    public static List<String> get_input_vectors() {
+        Double n=1.0;
+
+        List<String> input_vectors = new ArrayList<String>();
+        while (n<10) {
+            List<Double> result_item = new ArrayList<Double>();
+            result_item.add(n++);
+            result_item.add(n*n);
+
+            input_vectors.add(result_item.toString());
+        }
+
+        return input_vectors;
     }
 }
