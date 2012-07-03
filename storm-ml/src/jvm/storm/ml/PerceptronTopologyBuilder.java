@@ -14,7 +14,7 @@ public class PerceptronTopologyBuilder {
     public final Double threshold;
     public final Double learning_rate;
 
-    private List<BigDecimal> weights;
+    privatez List<BigDecimal> weights;
 
     public PerceptronTopologyBuilder(Integer size, Double threshold, Double learning_rate) {
         this.size = size;                   // size of the weight array and input
