@@ -14,7 +14,7 @@ import storm.ml.bolt.EvaluationBolt;
 public class PerceptronDRPCTopology {
     public static void main(String[] args) throws Exception {
         LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder("evaluate");
-        builder.addBolt(new EvaluationBolt(), 3);
+        builder.addBolt(new EvaluationBolt(1.0, 0.5), 3);
 
         Config conf = new Config();
 

@@ -14,6 +14,14 @@ import java.util.List;
 import storm.ml.Util;
 
 public class EvaluationBolt extends BaseBasicBolt {
+    Double bias;
+    Double threshold;
+
+    public EvaluationBolt(Double bias, Double threshold) {
+        this.bias = bias;
+        this.threshold = threshold;
+    }
+
     List<Double> get_latest_weigths() {
         List<Double> weights = new ArrayList<Double>();
         weights.add(1.0);
@@ -29,9 +37,9 @@ public class EvaluationBolt extends BaseBasicBolt {
         String input_str = tuple.getString(1);
         List<Double> input = Util.parse_str_vector(input_str);
 
-        Double result = Util.dot_product(input, weights);
+        Double result = Util.dot_product(input, weights) + this.bias;
 
-        collector.emit(new Values(tuple.getValue(0), result));
+        collector.emit(new Values(tuple.getValue(0), result > this.threshold ? 1 : 0));
     }
 
     @Override
