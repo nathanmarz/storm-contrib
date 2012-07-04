@@ -1,7 +1,9 @@
 package com.twitter.algorithms;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -46,6 +48,13 @@ public class Learner implements Serializable {
 
     public double[] getWeights() {
         return weights;
+    }
+
+    public List<Object> getWeightsArray() {
+        List<Object> weight_array = new ArrayList<Object>();
+        for (double weight : weights)
+            weight_array.add(weight);
+        return weight_array;
     }
 
     public double getParallelUpdateWeight() {

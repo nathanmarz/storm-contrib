@@ -54,6 +54,7 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
         example.label = (Double) tuple.getValue(2);
         example.isLabeled = true;
         learner.update(example, 1);
+        _collector.emit(Arrays.asList((Object) learner.getWeights(), (Object) learner.getParallelUpdateWeight()));
         _collector.ack(tuple);
         LOG.debug("New weights" + Arrays.toString(learner.getWeights()));
         // example.parseFrom((String) tuple.getValue(1), hashFunction);
@@ -61,7 +62,7 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("id", "weight_vector", "parallel_update_weights"));
+        declarer.declare(new Fields("weight_vector", "parallel_weight"));
     }
 
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
