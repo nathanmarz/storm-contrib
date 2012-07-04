@@ -39,7 +39,14 @@ public class PerceptronDRPCTopology {
 
             List<String> input_vectors = get_input_vectors();
             for (String input_vector : input_vectors) {
-                System.out.println(String.format("%s -> %s", input_vector, drpc.execute("evaluate", input_vector)));
+                List<Double> parsed_iv = Util.parse_str_vector(input_vector);
+                Double x = parsed_iv.get(0);
+                Double y = parsed_iv.get(1);
+
+                System.out.println(String.format("%s -> %s (expected: %s)",
+                                                 input_vector,
+                                                 drpc.execute("evaluate", input_vector),
+                                                 2*x + 1 > y ? 1 : 0));
             }
 
             cluster.shutdown();
