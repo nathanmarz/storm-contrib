@@ -7,6 +7,10 @@ import backtype.storm.LocalDRPC;
 import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
 
+import net.spy.memcached.MemcachedClient;
+import net.spy.memcached.AddrUtil;
+import net.spy.memcached.internal.OperationFuture;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,10 +19,16 @@ import storm.ml.bolt.TrainingBolt;
 import storm.ml.spout.TrainingSpout;
 
 public class PerceptronDRPCTopology {
+    public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
+
     public static void main(String[] args) throws Exception {
         Double bias          = 1.0;
         Double threshold     = 0.5;
         Double learning_rate = 0.2;
+
+        MemcachedClient memcache = new MemcachedClient(AddrUtil.getAddresses(PerceptronDRPCTopology.MEMCACHED_SERVERS));
+        OperationFuture promise = memcache.set("weights", 0, "[0.0, 0.0]");
+        promise.get();
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("training-spout", new TrainingSpout(), 10);
@@ -43,10 +53,10 @@ public class PerceptronDRPCTopology {
                 Double x = parsed_iv.get(0);
                 Double y = parsed_iv.get(1);
 
-                System.out.println(String.format("%s -> %s (expected: %s)",
-                                                 input_vector,
-                                                 drpc.execute("evaluate", input_vector),
-                                                 2*x + 1 > y ? 1 : 0));
+                String result = drpc.execute("evaluate", input_vector);
+                int expected_result = 2*x + 1 > y ? 1 : 0;
+
+                System.out.println(String.format("%s -> %s (expected: %s)", input_vector, result, expected_result));
             }
 
             cluster.shutdown();
