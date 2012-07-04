@@ -32,7 +32,7 @@ public class PerceptronDRPCTopology {
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("training-spout", new TrainingSpout(), 10);
-        builder.setBolt("training-bolt", new TrainingBolt(bias, threshold, learning_rate), 3)
+        builder.setBolt("training-bolt", new TrainingBolt(bias, threshold, learning_rate, PerceptronDRPCTopology.MEMCACHED_SERVERS), 3)
                .shuffleGrouping("training-spout");
 
         LinearDRPCTopologyBuilder drpc_builder = new LinearDRPCTopologyBuilder("evaluate");
