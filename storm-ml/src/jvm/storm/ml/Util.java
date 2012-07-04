@@ -16,4 +16,13 @@ public class Util {
 
         return vector;
     }
+
+    public static Double dot_product(List<Double> vector_a, List<Double> vector_b) {
+        Double result = 0.0;
+
+        for (int i=0; i<vector_a.size(); i++)
+            result += vector_a.get(i) * vector_b.get(i);
+
+        return result;
+    }
 }
