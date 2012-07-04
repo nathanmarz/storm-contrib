@@ -40,14 +40,14 @@ public class EvaluationBolt extends BaseBasicBolt {
         }
     }
 
-    List<Double> get_latest_weigths() {
+    List<Double> get_latest_weights() {
         String weights = (String)this.memcache.get("weights");
         return Util.parse_str_vector(weights);
     }
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
-        List<Double> weights = get_latest_weigths();
+        List<Double> weights = get_latest_weights();
 
         String input_str = tuple.getString(1);
         List<Double> input = Util.parse_str_vector(input_str);
