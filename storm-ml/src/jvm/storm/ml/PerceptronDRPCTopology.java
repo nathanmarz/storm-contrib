@@ -38,15 +38,15 @@ public class PerceptronDRPCTopology {
     }
 
     public static List<String> get_input_vectors() {
-        Double n=1.0;
-
         List<String> input_vectors = new ArrayList<String>();
-        while (n<10) {
-            List<Double> result_item = new ArrayList<Double>();
-            result_item.add(n++);
-            result_item.add(n*n);
+        for (Double x=-10.0; x<=10.0; x++) {
+            for (Double y=-10.0; y<=10.0; y++) {
+                List<Double> result_item = new ArrayList<Double>();
+                result_item.add(x);
+                result_item.add(y);
 
-            input_vectors.add(result_item.toString());
+                input_vectors.add(result_item.toString());
+            }
         }
 
         return input_vectors;
