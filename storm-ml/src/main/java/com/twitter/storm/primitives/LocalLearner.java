@@ -14,7 +14,6 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.transactional.ICommitter;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.Values;
 
 import com.twitter.algorithms.Learner;
 import com.twitter.data.Example;
@@ -41,6 +40,10 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
         this.learner = onlinePerceptron;
         // this.hashFunction = hashAll;
         weightVector = new double[dimension];
+        weightVector = new double[dimension];
+        weightVector[0] = -6.8;
+        weightVector[1] = -0.8;
+        learner.setWeights(weightVector);
     }
 
     public void execute(Tuple tuple) {
@@ -55,17 +58,6 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
         LOG.debug("New weights" + Arrays.toString(learner.getWeights()));
         // example.parseFrom((String) tuple.getValue(1), hashFunction);
         // buffer.add(example);
-    }
-
-    public void finishBatch() {
-        if (buffer.size() == 0)
-            return;
-        learner.initWeights(weightVector);
-        for (Example e : buffer) {
-            learner.update(e, 1);
-        }
-
-        collector.emit(new Values(id, learner.getWeights(), learner.getParallelUpdateWeight()));
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {

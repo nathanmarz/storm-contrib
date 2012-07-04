@@ -18,7 +18,7 @@ public class Learner implements Serializable {
     int numMisclassified = 0;
     double totalLoss = 0.0;
     double gradientSum = 0.0;
-    protected double learningRate = 1.0;
+    protected double learningRate = 0.0;
 
     public Learner(int dimension) {
         weights = new double[dimension];
@@ -67,6 +67,10 @@ public class Learner implements Serializable {
         if (example.label != prediction)
             numMisclassified++;
         totalLoss += lossFunction.get(example, prediction);
+    }
+
+    public void setWeights(double[] weights) {
+        this.weights = weights;
     }
 
     public void displayStats() {
