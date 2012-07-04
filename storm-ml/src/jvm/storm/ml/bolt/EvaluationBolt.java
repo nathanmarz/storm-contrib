@@ -1,5 +1,6 @@
 package storm.ml.bolt;
 
+import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.base.BaseBasicBolt;
 import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -7,27 +8,41 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
+import net.spy.memcached.AddrUtil;
+import net.spy.memcached.MemcachedClient;
+
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
 import storm.ml.Util;
 
 public class EvaluationBolt extends BaseBasicBolt {
     Double bias;
     Double threshold;
+    String memcached_servers;
+    MemcachedClient memcache;
 
-    public EvaluationBolt(Double bias, Double threshold) {
+    public EvaluationBolt(Double bias, Double threshold, String memcached_servers) {
         this.bias = bias;
         this.threshold = threshold;
+        this.memcached_servers = memcached_servers;
+    }
+
+    @Override
+    public void prepare(Map stormConf, TopologyContext context) {
+        super.prepare(stormConf, context);
+        try {
+            this.memcache = new MemcachedClient(AddrUtil.getAddresses(this.memcached_servers));
+        } catch (java.io.IOException e) {
+            System.exit(1);
+        }
     }
 
     List<Double> get_latest_weigths() {
-        List<Double> weights = new ArrayList<Double>();
-        weights.add(1.0);
-        weights.add(2.0);
-
-        return weights;
+        String weights = (String)this.memcache.get("weights");
+        return Util.parse_str_vector(weights);
     }
 
     @Override

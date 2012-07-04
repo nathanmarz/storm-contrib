@@ -7,9 +7,9 @@ import backtype.storm.LocalDRPC;
 import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
 
-import net.spy.memcached.MemcachedClient;
 import net.spy.memcached.AddrUtil;
 import net.spy.memcached.internal.OperationFuture;
+import net.spy.memcached.MemcachedClient;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +36,7 @@ public class PerceptronDRPCTopology {
                .shuffleGrouping("training-spout");
 
         LinearDRPCTopologyBuilder drpc_builder = new LinearDRPCTopologyBuilder("evaluate");
-        drpc_builder.addBolt(new EvaluationBolt(bias, threshold), 3);
+        drpc_builder.addBolt(new EvaluationBolt(bias, threshold, PerceptronDRPCTopology.MEMCACHED_SERVERS), 3);
 
         Config conf = new Config();
 
