@@ -5,16 +5,28 @@ import backtype.storm.drpc.LinearDRPCTopologyBuilder;
 import backtype.storm.LocalCluster;
 import backtype.storm.LocalDRPC;
 import backtype.storm.StormSubmitter;
+import backtype.storm.topology.TopologyBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import storm.ml.bolt.EvaluationBolt;
+import storm.ml.bolt.TrainingBolt;
+import storm.ml.spout.TrainingSpout;
 
 public class PerceptronDRPCTopology {
     public static void main(String[] args) throws Exception {
-        LinearDRPCTopologyBuilder builder = new LinearDRPCTopologyBuilder("evaluate");
-        builder.addBolt(new EvaluationBolt(1.0, 0.5), 3);
+        Double bias          = 1.0;
+        Double threshold     = 0.5;
+        Double learning_rate = 0.2;
+
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("training-spout", new TrainingSpout(), 10);
+        builder.setBolt("training-bolt", new TrainingBolt(bias, threshold, learning_rate), 3)
+               .shuffleGrouping("training-spout");
+
+        LinearDRPCTopologyBuilder drpc_builder = new LinearDRPCTopologyBuilder("evaluate");
+        drpc_builder.addBolt(new EvaluationBolt(bias, threshold), 3);
 
         Config conf = new Config();
 
@@ -22,7 +34,8 @@ public class PerceptronDRPCTopology {
             LocalDRPC drpc = new LocalDRPC();
             LocalCluster cluster = new LocalCluster();
 
-            cluster.submitTopology("evaluation-demo", conf, builder.createLocalTopology(drpc));
+            cluster.submitTopology("training-demo", conf, builder.createTopology());
+            cluster.submitTopology("evaluation-demo", conf, drpc_builder.createLocalTopology(drpc));
 
             List<String> input_vectors = get_input_vectors();
             for (String input_vector : input_vectors) {
@@ -33,7 +46,8 @@ public class PerceptronDRPCTopology {
             drpc.shutdown();
         } else {
             conf.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[0], conf, builder.createRemoteTopology());
+            StormSubmitter.submitTopology(args[0], conf, builder.createTopology());
+            StormSubmitter.submitTopology(args[0], conf, drpc_builder.createRemoteTopology());
         }
     }
 
