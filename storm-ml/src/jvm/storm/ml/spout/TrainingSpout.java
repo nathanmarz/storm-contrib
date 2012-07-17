@@ -13,12 +13,12 @@ import java.util.Map;
 
 public class TrainingSpout extends BaseRichSpout {
     int samples_count = 0;
-    int max_samples = 10;
+    int max_samples = 100;
     SpoutOutputCollector _collector;
 
     public static int get_label(Double x, Double y) {
         // arbitrary expected output (for testing purposes)
-        return (2*x + 1 > y)? 1 : 0;
+        return (2*x + 1 < y)? 1 : 0;
     }
 
     @Override

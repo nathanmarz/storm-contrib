@@ -22,9 +22,9 @@ public class PerceptronDRPCTopology {
     public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
 
     public static void main(String[] args) throws Exception {
-        Double bias          = 1.0;
-        Double threshold     = 0.5;
-        Double learning_rate = 0.2;
+        Double bias          = 0.0;
+        Double threshold     = 0.1;
+        Double learning_rate = 0.1;
 
         MemcachedClient memcache = new MemcachedClient(AddrUtil.getAddresses(PerceptronDRPCTopology.MEMCACHED_SERVERS));
         OperationFuture promise = memcache.set("weights", 0, "[0.0, 0.0]");
@@ -32,11 +32,11 @@ public class PerceptronDRPCTopology {
 
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("training-spout", new TrainingSpout(), 10);
-        builder.setBolt("training-bolt", new TrainingBolt(bias, threshold, learning_rate, PerceptronDRPCTopology.MEMCACHED_SERVERS), 3)
+        builder.setBolt("training-bolt", new TrainingBolt(bias, threshold, learning_rate, PerceptronDRPCTopology.MEMCACHED_SERVERS), 10)
                .shuffleGrouping("training-spout");
 
         LinearDRPCTopologyBuilder drpc_builder = new LinearDRPCTopologyBuilder("evaluate");
-        drpc_builder.addBolt(new EvaluationBolt(bias, threshold, PerceptronDRPCTopology.MEMCACHED_SERVERS), 3);
+        drpc_builder.addBolt(new EvaluationBolt(bias, threshold, PerceptronDRPCTopology.MEMCACHED_SERVERS));
 
         Config conf = new Config();
 
@@ -78,8 +78,8 @@ public class PerceptronDRPCTopology {
 
     public static List<String> get_input_vectors() {
         List<String> input_vectors = new ArrayList<String>();
-        for (Double x=-10.0; x<=10.0; x++) {
-            for (Double y=-10.0; y<=10.0; y++) {
+        for (Double x=-10.0; x<=10.0; x+=0.5) {
+            for (Double y=-10.0; y<=10.0; y+=0.5) {
                 List<Double> result_item = new ArrayList<Double>();
                 result_item.add(x);
                 result_item.add(y);
