@@ -9,6 +9,7 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
 import net.spy.memcached.AddrUtil;
+import net.spy.memcached.CASResponse;
 import net.spy.memcached.CASValue;
 import net.spy.memcached.MemcachedClient;
 
@@ -45,24 +46,30 @@ public class TrainingBolt extends BaseBasicBolt {
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
-        CASValue<Object> cas_weights = this.memcache.gets("weights");
+        while (true) {
+            CASValue<Object> cas_weights = this.memcache.gets("weights");
 
-        List<Double> weights = Util.parse_str_vector((String)cas_weights.getValue());
-        List<Double> example = Util.parse_str_vector(tuple.getString(0));
+            List<Double> weights = Util.parse_str_vector((String)cas_weights.getValue());
+            List<Double> example = Util.parse_str_vector(tuple.getString(0));
 
-        Double result = Util.dot_product(example, weights) + this.bias;
-        int classif = result > this.threshold ? 1 : 0;
+            Double result = Util.dot_product(example, weights) + this.bias;
+            int classif = result > this.threshold ? 1 : 0;
 
-        int label = tuple.getInteger(1);
-        int error = label - classif;
-        if (error != 0) {
+            int label = tuple.getInteger(1);
+            int error = label - classif;
+            if (error == 0)
+                break;
+
             List<Double> new_weights = new ArrayList<Double>(weights);
 
             for (int i=0; i<example.size(); i++)
                 new_weights.set(i, new_weights.get(i) + this.learning_rate * error * example.get(i));
 
             Long cas_id = cas_weights.getCas();
-            this.memcache.cas("weights", cas_id, new_weights.toString());
+            CASResponse cas_response = this.memcache.cas("weights", cas_id, new_weights.toString());
+
+            if (cas_response == CASResponse.OK)
+                break;
         }
     }
 
