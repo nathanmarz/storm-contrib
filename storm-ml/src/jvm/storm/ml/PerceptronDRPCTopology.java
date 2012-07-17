@@ -11,6 +11,8 @@ import net.spy.memcached.AddrUtil;
 import net.spy.memcached.internal.OperationFuture;
 import net.spy.memcached.MemcachedClient;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +50,8 @@ public class PerceptronDRPCTopology {
             cluster.submitTopology("evaluation-demo", conf, drpc_builder.createLocalTopology(drpc));
 
             int error_count = 0;
+            FileWriter fstream = new FileWriter("out.csv");
+            BufferedWriter out = new BufferedWriter(fstream);
 
             List<String> input_vectors = get_input_vectors();
             for (int i=0; i<input_vectors.size(); i++) {
@@ -63,9 +67,16 @@ public class PerceptronDRPCTopology {
                 if (!result.equals(expected_result.toString()))
                     error_count += 1;
 
-                String output_str = String.format("%s -> %s (expected: %s, %.2f%% error)", input_vector, result, expected_result, 100*error_count/Double.valueOf(i+1));
-                System.out.println(output_str);
+                Double error_perc = 100*error_count/Double.valueOf(i+1);
+
+                String format = "%s -> %s (expected: %s, %.2f%% error)";
+                System.out.println(String.format(format, input_vector, result, expected_result, error_perc));
+
+                format = "%s	%s	%s	%.2f";
+                out.write(String.format(format, input_vector, result, expected_result, error_perc));
+                out.newLine();
             }
+            out.close();
 
             cluster.shutdown();
             drpc.shutdown();
