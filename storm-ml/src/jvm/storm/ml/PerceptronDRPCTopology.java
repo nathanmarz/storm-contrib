@@ -54,7 +54,7 @@ public class PerceptronDRPCTopology {
                 Double y = parsed_iv.get(1);
 
                 String result = drpc.execute("evaluate", input_vector);
-                int expected_result = 2*x + 1 > y ? 1 : 0;
+                int expected_result = TrainingSpout.get_label(x, y);
 
                 System.out.println(String.format("%s -> %s (expected: %s)", input_vector, result, expected_result));
             }

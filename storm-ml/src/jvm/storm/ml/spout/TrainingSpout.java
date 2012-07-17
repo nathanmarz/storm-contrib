@@ -16,6 +16,11 @@ public class TrainingSpout extends BaseRichSpout {
     int max_samples = 10;
     SpoutOutputCollector _collector;
 
+    public static int get_label(Double x, Double y) {
+        // arbitrary expected output (for testing purposes)
+        return (2*x + 1 > y)? 1 : 0;
+    }
+
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         this._collector = collector;
@@ -31,7 +36,7 @@ public class TrainingSpout extends BaseRichSpout {
             example.add(x);
             example.add(y);
 
-            int label = 2*x + 1 > y ? 1 : 0;
+            int label = TrainingSpout.get_label(x, y);
 
             _collector.emit(new Values(example.toString(), label));
 
