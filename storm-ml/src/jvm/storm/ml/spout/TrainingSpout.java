@@ -11,19 +11,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class TrainingSpout extends BaseRichSpout {
+import storm.ml.spout.BaseTrainingSpout;
+
+public class TrainingSpout extends BaseTrainingSpout {
     int samples_count = 0;
     int max_samples = 100;
-    SpoutOutputCollector _collector;
 
     public static int get_label(Double x, Double y) {
         // arbitrary expected output (for testing purposes)
         return (2*x + 1 < y)? 1 : 0;
-    }
-
-    @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-        this._collector = collector;
     }
 
     @Override
@@ -42,10 +38,5 @@ public class TrainingSpout extends BaseRichSpout {
 
             this.samples_count++;
         }
-    }
-
-    @Override
-    public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("example", "label"));
     }
 }
