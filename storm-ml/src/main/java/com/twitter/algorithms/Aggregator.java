@@ -1,6 +1,6 @@
 package com.twitter.algorithms;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -16,12 +16,12 @@ import com.twitter.util.MathUtil;
 public class Aggregator extends BaseRichBolt {
 
     public static Logger LOG = Logger.getLogger(Aggregator.class);
-    double[] aggregateWeights = null;
+    List<Double> aggregateWeights = null;
     double totalUpdateWeight = 1.0;
 
     public void execute(Tuple tuple) {
 
-        double[] weight = (double[]) tuple.getValue(0);
+        List<Double> weight = (List<Double>) tuple.getValue(0);
         Double parallelUpdateWeight = (Double) tuple.getValue(1);
 
         if (parallelUpdateWeight != 1.0) {
@@ -37,7 +37,7 @@ public class Aggregator extends BaseRichBolt {
         LOG.info(totalUpdateWeight);
         if (aggregateWeights != null) {
             MathUtil.times(aggregateWeights, 1.0 / totalUpdateWeight);
-            LOG.info("New AGGREGATE vector: " + Arrays.toString(aggregateWeights));
+            // LOG.info("New AGGREGATE vector: " + Arrays.toString(aggregateWeights));
         }
     }
 

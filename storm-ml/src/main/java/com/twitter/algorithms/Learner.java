@@ -5,10 +5,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import net.spy.memcached.CASValue;
+import net.spy.memcached.MemcachedClient;
+
 import org.apache.log4j.Logger;
 
 import com.twitter.data.Example;
 import com.twitter.storm.primitives.LocalLearner;
+import com.twitter.util.Datautil;
 import com.twitter.util.MathUtil;
 
 public class Learner implements Serializable {
@@ -21,19 +25,23 @@ public class Learner implements Serializable {
     double totalLoss = 0.0;
     double gradientSum = 0.0;
     protected double learningRate = 0.0;
+    MemcachedClient memcache;
 
-    public Learner(int dimension) {
+    public Learner(int dimension, MemcachedClient memcache) {
         weights = new double[dimension];
         lossFunction = new LossFunction(2);
+        this.memcache = memcache;
     }
 
     public void update(Example example, int epoch) {
+        CASValue<Object> cas_weights = (CASValue<Object>) this.memcache.get("weights");
+        List<Double> weights = Datautil.parse_str_vector((String) cas_weights.getValue());
         int predicted = predict(example);
         updateStats(example, predicted);
         LOG.debug("EXAMPLE " + example.label + " PREDICTED: " + predicted);
         if (example.isLabeled) {
             if ((double) predicted != example.label) {
-                double[] gradient = lossFunction.gradient(example, predicted);
+                List<Double> gradient = lossFunction.gradient(example, predicted);
                 gradientSum += MathUtil.l2norm(gradient);
                 double eta = getLearningRate(example, epoch);
                 MathUtil.plus(weights, MathUtil.times(gradient, -1.0 * eta));

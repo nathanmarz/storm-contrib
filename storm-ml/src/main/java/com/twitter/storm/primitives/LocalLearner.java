@@ -1,9 +1,13 @@
 package com.twitter.storm.primitives;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import net.spy.memcached.AddrUtil;
+import net.spy.memcached.MemcachedClient;
 
 import org.apache.log4j.Logger;
 
@@ -30,35 +34,36 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
     HashAll hashFunction;
     Learner learner;
     double[] weightVector;
+    MemcachedClient memcache;
 
-    public LocalLearner(int dimension) {
-        this(dimension, new Learner(dimension));// , new HashAll());
+    public LocalLearner(int dimension, String memcached_servers) throws IOException {
+        this(dimension, new Learner(dimension, new MemcachedClient(AddrUtil.getAddresses(memcached_servers))));
     }
 
     public LocalLearner(int dimension, Learner onlinePerceptron) {// , HashAll hashAll) {
-        this.dimension = dimension;
-        this.learner = onlinePerceptron;
-        // this.hashFunction = hashAll;
-        weightVector = new double[dimension];
-        weightVector = new double[dimension];
-        weightVector[0] = -6.8;
-        weightVector[1] = -0.8;
-        learner.setWeights(weightVector);
+        try {
+            this.dimension = dimension;
+            this.learner = onlinePerceptron;
+            // this.hashFunction = hashAll;
+
+            weightVector = new double[dimension];
+            weightVector = new double[dimension];
+            weightVector[0] = -6.8;
+            weightVector[1] = -0.8;
+            learner.setWeights(weightVector);
+        } catch (Exception e) {
+
+        }
     }
 
     public void execute(Tuple tuple) {
-        LOG.debug("Old weights" + Arrays.toString(learner.getWeights()));
         Example example = new Example(2);
         example.x[0] = (Double) tuple.getValue(0);
         example.x[1] = (Double) tuple.getValue(1);
         example.label = (Double) tuple.getValue(2);
-        example.isLabeled = true;
         learner.update(example, 1);
         _collector.emit(Arrays.asList((Object) learner.getWeights(), (Object) learner.getParallelUpdateWeight()));
         _collector.ack(tuple);
-        LOG.debug("New weights" + Arrays.toString(learner.getWeights()));
-        // example.parseFrom((String) tuple.getValue(1), hashFunction);
-        // buffer.add(example);
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
