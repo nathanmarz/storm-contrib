@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>storm</groupId>
+    <artifactId>storm-contrib</artifactId>
+    <version>0.1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>storm-hbase</artifactId>
+  <packaging>jar</packaging>
+  <name>storm-hbase</name>
+  <description>Component for HBase as a Storm Bolt</description>
+
+	<properties>
+	    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<hadoop.version>0.20.2-cdh3u2 </hadoop.version>
+		<hbase.version>0.90.4-cdh3u2 </hbase.version>
+	</properties>
+	
+  <dependencies>
+  		<dependency>
+  	  		<groupId>storm</groupId>
+  	  		<artifactId>storm</artifactId>
+  		</dependency>
+  		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-core</artifactId>
+			<version>0.20.2-cdh3u2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-test</artifactId>
+			<version>0.20.2-cdh3u2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.hbase</groupId>
+			<artifactId>hbase</artifactId>
+			<version>0.90.4-cdh3u2</version>
+		</dependency>
+  </dependencies>
+  
+  <repositories>
+	<repository>
+		<id>Cloudera</id>
+		<name>Cloudera Repository</name>
+		<url>https://repository.cloudera.com/artifactory/cloudera-repos/</url>
+	</repository>
+  </repositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <encoding>UTF-8</encoding>
+          <source>6</source>
+          <target>6</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

@@ -1,0 +1,18 @@
+#storm-hbase
+
+The project contains two bolts. 
+
+1. HBase Dumper Bolt : This bolt dumps the stream data into hbase table, after creating it if it already does not exist.
+
+2. HBase Column Lookup Bolt: This bolt emits the value of the specified hbase column with row key equal to the received input value.
+  
+HBase Tables used in the project :
+  
+1. 'testTable'
+   Used by the HBaseDumperBoltTopology
+   Contains a column family named 'colFamily1' and two columns 'column1' and 'column2'
+     
+2.  'hbaseBoltTestTable'
+    Used by the HBaseColumnValueLookupTopology
+    Contains a single column family named 'colFamily1' and a column 'column1'
+  	  
