@@ -13,7 +13,7 @@ import java.util.Map;
 
 import storm.ml.spout.BaseTrainingSpout;
 
-public class TrainingSpout extends BaseTrainingSpout {
+public class ExampleTrainingSpout extends BaseTrainingSpout {
     int samples_count = 0;
     int max_samples = 100;
 
@@ -32,7 +32,7 @@ public class TrainingSpout extends BaseTrainingSpout {
             example.add(x);
             example.add(y);
 
-            int label = TrainingSpout.get_label(x, y);
+            int label = ExampleTrainingSpout.get_label(x, y);
 
             _collector.emit(new Values(example.toString(), label));
 

@@ -18,7 +18,7 @@ import java.util.List;
 
 import storm.ml.bolt.EvaluationBolt;
 import storm.ml.bolt.TrainingBolt;
-import storm.ml.spout.TrainingSpout;
+import storm.ml.spout.ExampleTrainingSpout;
 
 public class PerceptronDRPCTopology {
     public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
@@ -33,7 +33,7 @@ public class PerceptronDRPCTopology {
         promise.get();
 
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("training-spout", new TrainingSpout(), 10);
+        builder.setSpout("training-spout", new ExampleTrainingSpout(), 10);
         builder.setBolt("training-bolt", new TrainingBolt(bias, threshold, learning_rate, PerceptronDRPCTopology.MEMCACHED_SERVERS), 10)
                .shuffleGrouping("training-spout");
 
@@ -62,7 +62,7 @@ public class PerceptronDRPCTopology {
                 Double y = parsed_iv.get(1);
 
                 String result = drpc.execute("evaluate", input_vector);
-                Integer expected_result = TrainingSpout.get_label(x, y);
+                Integer expected_result = ExampleTrainingSpout.get_label(x, y);
 
                 if (!result.equals(expected_result.toString()))
                     error_count += 1;
