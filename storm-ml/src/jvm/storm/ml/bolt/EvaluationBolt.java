@@ -47,14 +47,16 @@ public class EvaluationBolt extends BaseBasicBolt {
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
-        List<Double> weights = get_latest_weights();
+        String input_str = tuple.getString(0);
+        Object retInfo = tuple.getValue(1);
 
-        String input_str = tuple.getString(1);
+        List<Double> weights = get_latest_weights();
         List<Double> input = Util.parse_str_vector(input_str);
 
-        Double result = Util.dot_product(input, weights) + this.bias;
+        Double evaluation = Util.dot_product(input, weights) + this.bias;
+        String result = evaluation > this.threshold ? "1" : "0";
 
-        collector.emit(new Values(tuple.getValue(0), result > this.threshold ? 1 : 0));
+        collector.emit(new Values(result, retInfo));
     }
 
     @Override
