@@ -1,7 +1,11 @@
 package com.twitter.algorithms;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
+import net.spy.memcached.AddrUtil;
+import net.spy.memcached.MemcachedClient;
 
 import org.apache.log4j.Logger;
 
@@ -18,6 +22,12 @@ public class Aggregator extends BaseRichBolt {
     public static Logger LOG = Logger.getLogger(Aggregator.class);
     List<Double> aggregateWeights = null;
     double totalUpdateWeight = 1.0;
+    MemcachedClient memcache;
+    String memcached_servers;
+
+    public Aggregator(String memcached_servers) {
+        this.memcached_servers = memcached_servers;
+    }
 
     public void execute(Tuple tuple) {
 
@@ -33,20 +43,25 @@ public class Aggregator extends BaseRichBolt {
             MathUtil.plus(aggregateWeights, weight);
         }
         totalUpdateWeight += parallelUpdateWeight;
-        LOG.info("totalUpdate");
-        LOG.info(totalUpdateWeight);
+        LOG.info("aggregate weights" + aggregateWeights);
+        MathUtil.times(aggregateWeights, 1.0 / totalUpdateWeight);
         if (aggregateWeights != null) {
-            MathUtil.times(aggregateWeights, 1.0 / totalUpdateWeight);
-            // LOG.info("New AGGREGATE vector: " + Arrays.toString(aggregateWeights));
+            memcache.set("model", 3600 * 24, aggregateWeights);
         }
-    }
-
-    public void declareOutputFields(OutputFieldsDeclarer declarer) {
 
     }
 
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-
+        try {
+            memcache = new MemcachedClient(AddrUtil.getAddresses(memcached_servers));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        // TODO Auto-generated method stub
+
+    }
 }

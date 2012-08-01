@@ -2,7 +2,6 @@ package com.twitter.storm.primitives;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +17,7 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.transactional.ICommitter;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 
 import com.twitter.algorithms.Learner;
 import com.twitter.data.Example;
@@ -34,19 +34,19 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
     HashAll hashFunction;
     Learner learner;
     double[] weightVector;
+    String memcached_servers;
     MemcachedClient memcache;
 
     public LocalLearner(int dimension, String memcached_servers) throws IOException {
-        this(dimension, new Learner(dimension, new MemcachedClient(AddrUtil.getAddresses(memcached_servers))));
+        this(dimension, new Learner(dimension), memcached_servers);
     }
 
-    public LocalLearner(int dimension, Learner onlinePerceptron) {// , HashAll hashAll) {
+    public LocalLearner(int dimension, Learner onlinePerceptron, String memcached_servers) {// , HashAll hashAll) {
         try {
             this.dimension = dimension;
             this.learner = onlinePerceptron;
             // this.hashFunction = hashAll;
-
-            weightVector = new double[dimension];
+            this.memcached_servers = memcached_servers;
             weightVector = new double[dimension];
             weightVector[0] = -6.8;
             weightVector[1] = -0.8;
@@ -61,8 +61,9 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
         example.x[0] = (Double) tuple.getValue(0);
         example.x[1] = (Double) tuple.getValue(1);
         example.label = (Double) tuple.getValue(2);
-        learner.update(example, 1);
-        _collector.emit(Arrays.asList((Object) learner.getWeights(), (Object) learner.getParallelUpdateWeight()));
+        learner.update(example, 1, memcache);
+        LOG.debug("getwe" + learner.getWeights());
+        _collector.emit(new Values(learner.getWeightsArray(), learner.getParallelUpdateWeight()));
         _collector.ack(tuple);
     }
 
@@ -74,7 +75,13 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
         this.collector = collector;
         learner.initWeights(weightVector);
         _collector = collector;
+        memcache = (MemcachedClient) context.getTaskData();
         weightVector = (double[]) context.getTaskData();
-        context.setTaskData(weightVector);
+        try {
+            memcache = new MemcachedClient(AddrUtil.getAddresses(memcached_servers));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 }
