@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import net.spy.memcached.CASValue;
 import net.spy.memcached.MemcachedClient;
 
 import org.apache.log4j.Logger;
@@ -25,17 +24,16 @@ public class Learner implements Serializable {
     double totalLoss = 0.0;
     double gradientSum = 0.0;
     protected double learningRate = 0.0;
-    MemcachedClient memcache;
 
-    public Learner(int dimension, MemcachedClient memcache) {
+    public Learner(int dimension) {
         weights = new double[dimension];
         lossFunction = new LossFunction(2);
-        this.memcache = memcache;
     }
 
-    public void update(Example example, int epoch) {
-        CASValue<Object> cas_weights = (CASValue<Object>) this.memcache.get("weights");
-        List<Double> weights = Datautil.parse_str_vector((String) cas_weights.getValue());
+    public void update(Example example, int epoch, MemcachedClient memcache) {
+        String cas_weights = (String) memcache.get("weights");
+        List<Double> weights = Datautil.parse_str_vector(cas_weights);
+        LOG.error("double weights" + weights);
         int predicted = predict(example);
         updateStats(example, predicted);
         LOG.debug("EXAMPLE " + example.label + " PREDICTED: " + predicted);
