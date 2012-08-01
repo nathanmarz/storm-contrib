@@ -43,8 +43,8 @@ public class Aggregator extends BaseRichBolt {
             MathUtil.plus(aggregateWeights, weight);
         }
         totalUpdateWeight += parallelUpdateWeight;
-        LOG.info("totalUpdate");
-        LOG.info(totalUpdateWeight);
+        LOG.info("aggregate weights" + aggregateWeights);
+        MathUtil.times(aggregateWeights, 1.0 / totalUpdateWeight);
         if (aggregateWeights != null) {
             memcache.set("model", 3600 * 24, aggregateWeights);
         }
