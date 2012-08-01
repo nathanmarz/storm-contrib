@@ -35,6 +35,7 @@ The perceptron is a parametric algorithm that is useful in cases when data is li
 We provide a class called MLTopologyBuilder that you can use to quickly build your learning topology. 
 
 As we mentioned before in order to use this topology-builder you need to implement a spout that subclasses BaseTrainingSpout  for feeding your training data storm.primitives.examples.TrainingSpout is an example) the rest of the template remains the same.
+
       MLTopologyBuilder builder = new MLTopologyBuilder();
       builder.setTrainingSpout(new TrainingSpout());
 
