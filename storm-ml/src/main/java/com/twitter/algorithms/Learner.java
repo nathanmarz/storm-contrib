@@ -31,21 +31,27 @@ public class Learner implements Serializable {
         lossFunction = new LossFunction(2);
     }
 
+    public void setLocalWeights(List<Double> localWeights) {
+        Double[] weights_double = localWeights.toArray(new Double[localWeights.size()]);
+        this.setWeights(ArrayUtils.toPrimitive(weights_double));
+
+    }
+
     public void update(Example example, int epoch, MemcachedClient memcache) {
         String cas_weights = (String) memcache.get("model");
         List<Double> weights = Datautil.parse_str_vector(cas_weights);
-        Double[] weights_double = weights.toArray(new Double[weights.size()]);
-        this.setWeights(ArrayUtils.toPrimitive(weights_double));
-        LOG.error("double weights" + weights_double[0]);
+        setLocalWeights(weights);
         int predicted = predict(example);
         updateStats(example, predicted);
-        LOG.debug("EXAMPLE " + example.label + " PREDICTED: " + predicted);
+        LOG.debug("EXAMPLE " + example.x[0] + "," + example.x[1] + " LABEL" + example.label + " PREDICTED: "
+                + predicted);
         if (example.isLabeled) {
             if ((double) predicted != example.label) {
                 List<Double> gradient = lossFunction.gradient(example, predicted);
                 gradientSum += MathUtil.l2norm(gradient);
                 double eta = getLearningRate(example, epoch);
-                MathUtil.plus(weights, MathUtil.times(gradient, -1.0 * eta));
+                LOG.debug("NEW WEIGHTS" + MathUtil.plus(weights, MathUtil.times(gradient, -1.0 * eta)));
+                setLocalWeights(MathUtil.plus(weights, MathUtil.times(gradient, -1.0 * eta)));
             }
         }
         displayStats();

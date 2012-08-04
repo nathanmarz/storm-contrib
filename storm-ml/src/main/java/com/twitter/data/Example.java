@@ -14,7 +14,7 @@ public class Example {
 
     public Example(int dimension) {
         x = new double[dimension];
-        isLabeled = false;
+        isLabeled = true;
     }
 
     public String toString() {

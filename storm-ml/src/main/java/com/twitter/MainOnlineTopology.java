@@ -1,8 +1,5 @@
 package com.twitter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import net.spy.memcached.AddrUtil;
 import net.spy.memcached.MemcachedClient;
 import net.spy.memcached.internal.OperationFuture;
@@ -23,7 +20,7 @@ public class MainOnlineTopology {
 
     public static void main(String[] args) throws Exception {
         MemcachedClient memcache = new MemcachedClient(AddrUtil.getAddresses(MEMCACHED_SERVERS));
-        OperationFuture promise = memcache.set("model", 0, "[0.0, 0.0]");
+        OperationFuture promise = memcache.set("model", 0, "[0.1, 0.1]");
         promise.get();
 
         Config topology_conf = new Config();
