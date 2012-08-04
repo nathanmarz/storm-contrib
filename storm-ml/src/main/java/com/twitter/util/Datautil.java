@@ -54,4 +54,13 @@ public class Datautil {
         }
         return lines;
     }
+
+    public static String toStrVector(List<Double> aggregateWeights) {
+        String acc = "[";
+        for (Double weight : aggregateWeights) {
+            acc += weight.toString() + ", ";
+        }
+        acc += "]";
+        return acc;
+    }
 }

@@ -4,64 +4,134 @@ import backtype.storm.ILocalDRPC;
 import backtype.storm.drpc.DRPCSpout;
 import backtype.storm.drpc.ReturnResults;
 import backtype.storm.generated.StormTopology;
+import backtype.storm.topology.IBasicBolt;
+import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.topology.base.BaseRichSpout;
+
+import com.twitter.algorithms.Aggregator;
 
 public class MLTopologyBuilder {
 
     public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
-    private BaseRichBolt trainingBolt;
-    private BaseRichSpout trainingSpout;
 
-    public TopologyBuilder prepareTopology(ILocalDRPC drpc) {
-        return prepareTopology(drpc, 3.0, 0.0, 3.0, MEMCACHED_SERVERS);
+    String topology_prefix;
+
+    TrainingSpout training_spout;
+    Number training_spout_parallelism;
+
+    IBasicBolt basic_training_bolt;
+    IRichBolt rich_training_bolt;
+    Number training_bolt_parallelism;
+
+    IBasicBolt basic_evaluation_bolt;
+    IRichBolt rich_evaluation_bolt;
+    Number evaluation_bolt_parallelism;
+
+    public MLTopologyBuilder(String topologyPrefix) {
+        this.topology_prefix = topologyPrefix;
     }
 
-    public void setTrainingBolt(BaseRichBolt trainingBolt) {
-        this.trainingBolt = trainingBolt;
+    public TopologyBuilder prepareTopology(String drpcFunctionName, ILocalDRPC drpc) {
+        return prepareTopology(drpcFunctionName, drpc, 1.0, 0.0, 0.5, MEMCACHED_SERVERS);
     }
 
-    public void setTrainingSpout(BaseRichSpout trainingSpout) {
-        this.trainingSpout = trainingSpout;
+    public void setTrainingSpout(TrainingSpout trainingSpout, Number parallelism) {
+        this.training_spout = trainingSpout;
+        this.training_spout_parallelism = training_spout_parallelism;
     }
 
-    public TopologyBuilder prepareTopology(ILocalDRPC drpc, double bias, double threshold, double learning_rate,
-            String memcached_servers) {
+    public void setTrainingSpout(TrainingSpout trainingSpout) {
+        setTrainingSpout(trainingSpout, 1);
+    }
+
+    public void setTrainingBolt(IBasicBolt training_bolt, Number parallelism) {
+        this.basic_training_bolt = training_bolt;
+        this.rich_training_bolt = null;
+        this.training_bolt_parallelism = training_bolt_parallelism;
+    }
+
+    public void setTrainingBolt(IBasicBolt training_bolt) {
+        setTrainingBolt(training_bolt, 1);
+    }
+
+    public void setTrainingBolt(IRichBolt training_bolt, Number parallelism) {
+        this.rich_training_bolt = training_bolt;
+        this.basic_training_bolt = null;
+        this.training_bolt_parallelism = training_bolt_parallelism;
+    }
+
+    public void setTrainingBolt(IRichBolt training_bolt) {
+        setTrainingBolt(training_bolt, 1);
+    }
+
+    public void setEvaluationBolt(IBasicBolt evaluation_bolt, Number parallelism) {
+        this.basic_evaluation_bolt = evaluation_bolt;
+        this.rich_evaluation_bolt = null;
+        this.evaluation_bolt_parallelism = evaluation_bolt_parallelism;
+    }
+
+    public void setEvaluationBolt(IBasicBolt evaluation_bolt) {
+        setEvaluationBolt(evaluation_bolt, 1);
+    }
+
+    public void setEvaluationBolt(IRichBolt evaluation_bolt, Number parallelism) {
+        this.rich_evaluation_bolt = evaluation_bolt;
+        this.basic_evaluation_bolt = null;
+        this.evaluation_bolt_parallelism = evaluation_bolt_parallelism;
+    }
+
+    public void setEvaluationBolt(IRichBolt evaluation_bolt) {
+        setEvaluationBolt(evaluation_bolt, 1);
+    }
+
+    public TopologyBuilder prepareTopology(String drpcFunctionName, ILocalDRPC drpc, double bias, double threshold,
+            double learning_rate, String memcached_servers) {
         TopologyBuilder topology_builder = new TopologyBuilder();
 
         // training
-        topology_builder.setSpout("training-spout", new ExampleTrainingSpout());
+        topology_builder.setSpout(this.topology_prefix + "-training-spout", this.training_spout,
+                this.training_spout_parallelism);
 
-        topology_builder.setBolt("training-bolt", new LocalLearner(bias, threshold, learning_rate, MEMCACHED_SERVERS))
-                .shuffleGrouping("training-spout");
+        if (this.rich_training_bolt == null) {
+            topology_builder.setBolt(this.topology_prefix + "-training-bolt", this.basic_training_bolt,
+                    this.training_bolt_parallelism).shuffleGrouping(this.topology_prefix + "-training-spout");
+        } else {
+            topology_builder.setBolt(this.topology_prefix + "-training-bolt", this.rich_training_bolt,
+                    this.training_bolt_parallelism).shuffleGrouping(this.topology_prefix + "-training-spout");
+        }
+        topology_builder.setBolt("aggregator", new Aggregator(MEMCACHED_SERVERS)).globalGrouping(
+                this.topology_prefix + "-training-bolt");
 
         // evaluation
         DRPCSpout drpc_spout;
+
         if (drpc != null)
-            drpc_spout = new DRPCSpout("evaluate", drpc);
+            drpc_spout = new DRPCSpout(drpcFunctionName, drpc);
         else
-            drpc_spout = new DRPCSpout("evaluate");
+            drpc_spout = new DRPCSpout(drpcFunctionName);
 
-        topology_builder.setSpout("drpc-spout", drpc_spout);
+        topology_builder.setSpout(this.topology_prefix + "-drpc-spout", drpc_spout);
 
-        topology_builder.setBolt(
-                "drpc-evaluation",
-                new EvaluationBolt(PerceptronDRPCTopology.bias, PerceptronDRPCTopology.threshold,
-                        PerceptronDRPCTopology.MEMCACHED_SERVERS)).shuffleGrouping("drpc-spout");
+        if (this.rich_evaluation_bolt == null) {
+            topology_builder.setBolt(this.topology_prefix + "-drpc-evaluation", this.basic_evaluation_bolt,
+                    this.evaluation_bolt_parallelism).shuffleGrouping(this.topology_prefix + "-drpc-spout");
+        } else {
+            topology_builder.setBolt(this.topology_prefix + "-drpc-evaluation", this.rich_evaluation_bolt,
+                    this.evaluation_bolt_parallelism).shuffleGrouping(this.topology_prefix + "-drpc-spout");
+        }
 
-        topology_builder.setBolt("drpc-return", new ReturnResults()).shuffleGrouping("drpc-evaluation");
-
+        topology_builder.setBolt(this.topology_prefix + "-drpc-return", new ReturnResults()).shuffleGrouping(
+                this.topology_prefix + "-drpc-evaluation");
         // return
         return topology_builder;
 
     }
 
-    public StormTopology createLocalTopology(ILocalDRPC drpc) {
-        return prepareTopology(drpc).createTopology();
+    public StormTopology createLocalTopology(String drpcFunctionName, ILocalDRPC drpc) {
+        return prepareTopology(drpcFunctionName, drpc).createTopology();
     }
 
-    public StormTopology createRemoteTopology() {
-        return prepareTopology(null).createTopology();
+    public StormTopology createRemoteTopology(String drpcFunctionName) {
+        return prepareTopology(drpcFunctionName, null).createTopology();
     }
 }
