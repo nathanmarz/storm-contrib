@@ -1,4 +1,4 @@
-package com.twitter;
+package com.twitter.storm.example;
 
 import net.spy.memcached.AddrUtil;
 import net.spy.memcached.MemcachedClient;
@@ -9,9 +9,9 @@ import backtype.storm.LocalDRPC;
 import backtype.storm.utils.Utils;
 
 import com.twitter.storm.primitives.EvaluationBolt;
-import com.twitter.storm.primitives.ExampleTrainingSpout;
-import com.twitter.storm.primitives.LocalLearner;
 import com.twitter.storm.primitives.MLTopologyBuilder;
+import com.twitter.storm.primitives.example.ExampleTrainingSpout;
+import com.twitter.storm.primitives.example.LocalLearner;
 
 public class MainOnlineTopology {
     public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";

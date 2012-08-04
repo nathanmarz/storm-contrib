@@ -1,4 +1,4 @@
-package com.twitter.storm.primitives;
+package com.twitter.storm.primitives.example;
 
 import java.io.IOException;
 import java.util.ArrayList;

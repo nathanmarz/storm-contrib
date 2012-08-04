@@ -7,7 +7,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.twitter.data.Example;
-import com.twitter.storm.primitives.LocalLearner;
+import com.twitter.storm.primitives.example.LocalLearner;
 
 public class LossFunction implements Serializable {
     public static Logger LOG = Logger.getLogger(LocalLearner.class);

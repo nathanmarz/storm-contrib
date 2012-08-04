@@ -1,7 +1,9 @@
-package com.twitter.storm.primitives;
+package com.twitter.storm.primitives.example;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import com.twitter.storm.primitives.BaseTrainingSpout;
 
 import backtype.storm.tuple.Values;
 

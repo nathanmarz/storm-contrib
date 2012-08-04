@@ -11,7 +11,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import com.twitter.data.Example;
-import com.twitter.storm.primitives.LocalLearner;
+import com.twitter.storm.primitives.example.LocalLearner;
 import com.twitter.util.Datautil;
 import com.twitter.util.MathUtil;
 

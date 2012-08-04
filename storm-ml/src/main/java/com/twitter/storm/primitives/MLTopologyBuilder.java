@@ -8,7 +8,6 @@ import backtype.storm.topology.IBasicBolt;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.TopologyBuilder;
 
-import com.twitter.algorithms.Aggregator;
 
 public class MLTopologyBuilder {
 
