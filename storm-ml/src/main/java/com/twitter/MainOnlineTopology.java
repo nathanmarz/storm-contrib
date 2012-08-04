@@ -3,13 +3,11 @@ package com.twitter;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.LocalDRPC;
-import backtype.storm.drpc.LinearDRPCTopologyBuilder;
-import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.utils.Utils;
 
-import com.twitter.algorithms.Aggregator;
 import com.twitter.storm.primitives.EvaluationBolt;
 import com.twitter.storm.primitives.LocalLearner;
+import com.twitter.storm.primitives.MLTopologyBuilder;
 import com.twitter.storm.primitives.TrainingSpout;
 
 public class MainOnlineTopology {
@@ -18,25 +16,30 @@ public class MainOnlineTopology {
     static Double bias = 1.0;
 
     public static void main(String[] args) throws Exception {
-        TopologyBuilder builder = new TopologyBuilder();
-        LocalDRPC drpc = new LocalDRPC();
 
-        builder.setSpout("example_spitter", new TrainingSpout());
-        builder.setBolt("local_learner", new LocalLearner(2, MEMCACHED_SERVERS), 1).shuffleGrouping("example_spitter");
-        builder.setBolt("aggregator", new Aggregator(MEMCACHED_SERVERS)).globalGrouping("local_learner");
+        Config topology_conf = new Config();
+        String topology_name;
+        if (args == null || args.length == 0)
+            topology_name = "perceptron";
+        else
+            topology_name = args[0];
 
-        LinearDRPCTopologyBuilder drpc_builder = new LinearDRPCTopologyBuilder("evaluate");
-        drpc_builder.addBolt(new EvaluationBolt(bias, threshold, MEMCACHED_SERVERS), 3);
+        MLTopologyBuilder ml_topology_builder = new MLTopologyBuilder(topology_name);
 
-        Config conf = new Config();
-        conf.setDebug(true);
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology("learning", conf, builder.createTopology());
-        // cluster.submitTopology("evaluation", conf, drpc_builder.createLocalTopology(drpc));
+        ml_topology_builder.setTrainingSpout(new TrainingSpout());
+        ml_topology_builder.setTrainingBolt(new LocalLearner(2, MEMCACHED_SERVERS));
+        ml_topology_builder.setEvaluationBolt(new EvaluationBolt(1.0, 2.0, MEMCACHED_SERVERS));
 
-        Utils.sleep(10000);
-        cluster.killTopology("learning");
-        cluster.shutdown();
+        if (args == null || args.length == 0) {
+            LocalDRPC drpc = new LocalDRPC();
+            LocalCluster cluster = new LocalCluster();
 
+            cluster.submitTopology(topology_name, topology_conf,
+                    ml_topology_builder.createLocalTopology("evaluate", drpc));
+
+            Utils.sleep(10000);
+            cluster.killTopology("perceptron");
+            cluster.shutdown();
+        }
     }
 }
