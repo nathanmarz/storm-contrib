@@ -7,6 +7,7 @@ import java.util.List;
 
 import net.spy.memcached.MemcachedClient;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import com.twitter.data.Example;
@@ -31,9 +32,11 @@ public class Learner implements Serializable {
     }
 
     public void update(Example example, int epoch, MemcachedClient memcache) {
-        String cas_weights = (String) memcache.get("weights");
+        String cas_weights = (String) memcache.get("model");
         List<Double> weights = Datautil.parse_str_vector(cas_weights);
-        LOG.error("double weights" + weights);
+        Double[] weights_double = weights.toArray(new Double[weights.size()]);
+        this.setWeights(ArrayUtils.toPrimitive(weights_double));
+        LOG.error("double weights" + weights_double[0]);
         int predicted = predict(example);
         updateStats(example, predicted);
         LOG.debug("EXAMPLE " + example.label + " PREDICTED: " + predicted);

@@ -1,5 +1,11 @@
 package com.twitter;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import net.spy.memcached.AddrUtil;
+import net.spy.memcached.MemcachedClient;
+import net.spy.memcached.internal.OperationFuture;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.LocalDRPC;
@@ -16,6 +22,9 @@ public class MainOnlineTopology {
     static Double bias = 1.0;
 
     public static void main(String[] args) throws Exception {
+        MemcachedClient memcache = new MemcachedClient(AddrUtil.getAddresses(MEMCACHED_SERVERS));
+        OperationFuture promise = memcache.set("model", 0, "[0.0, 0.0]");
+        promise.get();
 
         Config topology_conf = new Config();
         String topology_name;

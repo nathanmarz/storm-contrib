@@ -8,6 +8,8 @@ import backtype.storm.topology.IBasicBolt;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.TopologyBuilder;
 
+import com.twitter.algorithms.Aggregator;
+
 public class MLTopologyBuilder {
 
     public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
@@ -97,6 +99,8 @@ public class MLTopologyBuilder {
             topology_builder.setBolt(this.topology_prefix + "-training-bolt", this.rich_training_bolt,
                     this.training_bolt_parallelism).shuffleGrouping(this.topology_prefix + "-training-spout");
         }
+        topology_builder.setBolt("aggregator", new Aggregator(MEMCACHED_SERVERS)).globalGrouping(
+                this.topology_prefix + "-training-bolt");
 
         // evaluation
         DRPCSpout drpc_spout;

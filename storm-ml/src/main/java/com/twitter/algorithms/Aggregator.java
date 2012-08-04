@@ -15,6 +15,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
 
+import com.twitter.util.Datautil;
 import com.twitter.util.MathUtil;
 
 public class Aggregator extends BaseRichBolt {
@@ -34,6 +35,7 @@ public class Aggregator extends BaseRichBolt {
         List<Double> weight = (List<Double>) tuple.getValue(0);
         Double parallelUpdateWeight = (Double) tuple.getValue(1);
 
+        LOG.error("AGGGG" + weight);
         if (parallelUpdateWeight != 1.0) {
             weight = MathUtil.times(weight, parallelUpdateWeight);
         }
@@ -46,7 +48,7 @@ public class Aggregator extends BaseRichBolt {
         MathUtil.times(aggregateWeights, 1.0 / totalUpdateWeight);
         LOG.info("aggregate weights" + aggregateWeights);
         if (aggregateWeights != null) {
-            memcache.set("model", 3600 * 24, aggregateWeights);
+            memcache.set("model", 3600 * 24, Datautil.toStrVector(aggregateWeights));
         }
 
     }

@@ -62,7 +62,8 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
         example.x[1] = (Double) tuple.getValue(1);
         example.label = (Double) tuple.getValue(2);
         learner.update(example, 1, memcache);
-        LOG.debug("getwe" + learner.getWeights());
+        LOG.debug("local weights" + learner.getWeightsArray() + " parallel weights "
+                + learner.getParallelUpdateWeight());
         _collector.emit(new Values(learner.getWeightsArray(), learner.getParallelUpdateWeight()));
         _collector.ack(tuple);
     }
