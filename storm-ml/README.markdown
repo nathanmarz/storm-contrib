@@ -16,6 +16,12 @@ Then, what we need, is to define how to use that training set to be able to pred
 First of all one thing to note is that : 
 The current implementation requires a memcached instance/cluster to be running. Also you need maven.
 
+In Mac OSX you can do:
+
+    brew install memcached
+
+And then follow the instruction to launch it using launchctl.
+
 Basically and conceptually what you get from our project are two pipes (topologies).
 
 One of these pipes is the "training" pipe, training examples should go through here. The good thing about training this way is that if examples are coming your way very quickly there is potentially infinite power you can give to this pipe.
@@ -31,6 +37,12 @@ The perceptron is a parametric algorithm that is useful in cases when data is li
 ### Logistic Regression
 
 ## Running the most basic example
+
+### Example run
+
+You can use the example topology in com.twitter.storm.example
+
+### Preparing for training 
 
 We provide a class called MLTopologyBuilder that you can use to quickly build your learning topology. 
 
@@ -54,8 +66,16 @@ So let's recap we instiated the builder, then we plugged it up with a spout and 
 
 ### Starting it
 
-        cluster.submitTopology("learning", conf, myTopology);
+One thing to take into consideration is that we need to pass a new instance of a class that implements Idrpc to the MLTopologyBuilder for it to associate it with our topology. Once you do this you can use that drpc instance for making calls to the MLTopology.
+
+        LocalDRPC drpc = new LocalDRPC();
+        cluster.submitTopology("learning", conf, builder.createLocalTopology("evaluate", drpc));
 
         Utils.sleep(10000);
         cluster.killTopology("learning");
         cluster.shutdown();
+
+### Predicting values using the drpc
+
+You can execute code using the DRPC topology we previously built calling it like this: (please notice the nomenclature for a point to be classified):
+    drpc.execute("evaluate", "[3.0, 2.0]");
