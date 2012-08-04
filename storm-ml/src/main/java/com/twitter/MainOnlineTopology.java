@@ -9,9 +9,9 @@ import backtype.storm.LocalDRPC;
 import backtype.storm.utils.Utils;
 
 import com.twitter.storm.primitives.EvaluationBolt;
+import com.twitter.storm.primitives.ExampleTrainingSpout;
 import com.twitter.storm.primitives.LocalLearner;
 import com.twitter.storm.primitives.MLTopologyBuilder;
-import com.twitter.storm.primitives.TrainingSpout;
 
 public class MainOnlineTopology {
     public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
@@ -32,7 +32,7 @@ public class MainOnlineTopology {
 
         MLTopologyBuilder ml_topology_builder = new MLTopologyBuilder(topology_name);
 
-        ml_topology_builder.setTrainingSpout(new TrainingSpout());
+        ml_topology_builder.setTrainingSpout(new ExampleTrainingSpout());
         ml_topology_builder.setTrainingBolt(new LocalLearner(2, MEMCACHED_SERVERS));
         ml_topology_builder.setEvaluationBolt(new EvaluationBolt(1.0, 2.0, MEMCACHED_SERVERS));
 

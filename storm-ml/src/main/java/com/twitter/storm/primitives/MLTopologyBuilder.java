@@ -16,7 +16,7 @@ public class MLTopologyBuilder {
 
     String topology_prefix;
 
-    TrainingSpout training_spout;
+    BaseTrainingSpout training_spout;
     Number training_spout_parallelism;
 
     IBasicBolt basic_training_bolt;
@@ -35,13 +35,13 @@ public class MLTopologyBuilder {
         return prepareTopology(drpcFunctionName, drpc, 1.0, 0.0, 0.5, MEMCACHED_SERVERS);
     }
 
-    public void setTrainingSpout(TrainingSpout trainingSpout, Number parallelism) {
-        this.training_spout = trainingSpout;
+    public void setTrainingSpout(BaseTrainingSpout exampleTrainingSpout, Number parallelism) {
+        this.training_spout = exampleTrainingSpout;
         this.training_spout_parallelism = training_spout_parallelism;
     }
 
-    public void setTrainingSpout(TrainingSpout trainingSpout) {
-        setTrainingSpout(trainingSpout, 1);
+    public void setTrainingSpout(BaseTrainingSpout exampleTrainingSpout) {
+        setTrainingSpout(exampleTrainingSpout, 1);
     }
 
     public void setTrainingBolt(IBasicBolt training_bolt, Number parallelism) {

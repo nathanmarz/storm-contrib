@@ -16,6 +16,6 @@ public abstract class BaseTrainingSpout extends BaseRichSpout {
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("example", "label"));
+        declarer.declare(new Fields("example-x", "example-y", "label"));
     }
 }

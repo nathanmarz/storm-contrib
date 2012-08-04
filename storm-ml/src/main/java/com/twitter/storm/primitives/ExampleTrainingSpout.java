@@ -9,9 +9,9 @@ public class ExampleTrainingSpout extends BaseTrainingSpout {
     int samples_count = 0;
     int max_samples = 100;
 
-    public static int get_label(Double x, Double y) {
+    public static double get_label(Double x, Double y) {
         // arbitrary expected output (for testing purposes)
-        return (2 * x + 1 < y) ? 1 : 0;
+        return (2 * x + 1 < y) ? 1.0 : -1.0;
     }
 
     public void nextTuple() {
@@ -23,9 +23,9 @@ public class ExampleTrainingSpout extends BaseTrainingSpout {
             example.add(x);
             example.add(y);
 
-            int label = ExampleTrainingSpout.get_label(x, y);
+            double label = ExampleTrainingSpout.get_label(x, y);
 
-            _collector.emit(new Values(example.toString(), label));
+            _collector.emit(new Values(x, y, label));
 
             this.samples_count++;
         }
