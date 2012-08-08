@@ -38,19 +38,20 @@ public class EvaluationBolt extends BaseBasicBolt {
     }
 
     List<Double> get_latest_weights() {
-        String weights = (String) this.memcache.get("weights");
+        String weights = (String) this.memcache.get("model");
         return Datautil.parse_str_vector(weights);
     }
 
     public void execute(Tuple tuple, BasicOutputCollector collector) {
-        List<Double> weights = get_latest_weights();
-
         String input_str = tuple.getString(1);
+
+        List<Double> weights = get_latest_weights();
         List<Double> input = Datautil.parse_str_vector(input_str);
 
-        Double result = Datautil.dot_product(input, weights) + bias;
+        Double evaluation = Datautil.dot_product(input, weights) + this.bias;
+        String result = evaluation > this.threshold ? "1" : "-1";
 
-        collector.emit(new Values(tuple.getValue(0), result > this.threshold ? 1 : 0));
+        collector.emit(new Values(tuple.getString(0), result));
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {

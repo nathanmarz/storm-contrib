@@ -35,7 +35,6 @@ public class Aggregator extends BaseRichBolt {
         List<Double> weight = (List<Double>) tuple.getValue(0);
         Double parallelUpdateWeight = (Double) tuple.getValue(1);
 
-        LOG.error("AGGGG" + weight);
         if (parallelUpdateWeight != 1.0) {
             weight = MathUtil.times(weight, parallelUpdateWeight);
         }
@@ -46,7 +45,6 @@ public class Aggregator extends BaseRichBolt {
         }
         totalUpdateWeight += parallelUpdateWeight;
         MathUtil.times(aggregateWeights, 1.0 / totalUpdateWeight);
-        LOG.info("aggregate weights" + aggregateWeights);
         if (aggregateWeights != null) {
             memcache.set("model", 3600 * 24, Datautil.toStrVector(aggregateWeights));
         }

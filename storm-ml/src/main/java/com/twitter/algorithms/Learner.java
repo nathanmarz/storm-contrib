@@ -11,13 +11,13 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import com.twitter.data.Example;
-import com.twitter.storm.primitives.example.LocalLearner;
 import com.twitter.util.Datautil;
 import com.twitter.util.MathUtil;
 
 public class Learner implements Serializable {
-    public static Logger LOG = Logger.getLogger(LocalLearner.class);
+    public static Logger LOG = Logger.getLogger(Learner.class);
 
+    private double threshold = 0.0;
     protected double[] weights;
     protected LossFunction lossFunction;
     int numExamples = 0;
@@ -83,7 +83,7 @@ public class Learner implements Serializable {
 
     public int predict(Example example) {
         double dot = MathUtil.dot(weights, example.x);
-        return (dot >= 0.0) ? 1 : -1;
+        return (dot >= this.threshold) ? 1 : -1;
     }
 
     protected void updateStats(Example example, int prediction) {
