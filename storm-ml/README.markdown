@@ -40,9 +40,23 @@ The perceptron is a parametric algorithm that is useful in cases when data is li
 
 ### Example run
 
-You can use the example topology in com.twitter.storm.example
+You can use the example topology in com.twitter.storm.example.MainOnlineTopology
 
-### Preparing for training 
+In this topology we provide everything you need for playing with Storm-ML. In particular we provide with two things , a dataset generator and a Learner.
+
+### Dataset Generator
+
+We generate some dumb data, linearly separable given a linear  equation. This dataset is going directly to the learner.
+
+### Learner
+
+The way the learner works is by using the perceptron algorithm, emiting the result and that get caught up by an aggregator who then publishes the new_weights for the learners to use. That is the feed-back loop betweeen LocalLearners and aggregators.
+
+### Results
+
+In one given run in my machine I got 85% sustained accuracy. Many times I got in the high 90s. It depends really on the dataset.
+
+## Preparing for training 
 
 We provide a class called MLTopologyBuilder that you can use to quickly build your learning topology. 
 
@@ -78,4 +92,7 @@ One thing to take into consideration is that we need to pass a new instance of a
 ### Predicting values using the drpc
 
 You can execute code using the DRPC topology we previously built calling it like this: (please notice the nomenclature for a point to be classified):
-    drpc.execute("evaluate", "[3.0, 2.0]");
+    List<Double> evauluationPoint = new ArrayList<Double>();
+    evaluationPoint.add(2.0);
+    evaluationPoint.add(0.4);
+    drpc.execute("evaluate", evaluationPoint.toString());
