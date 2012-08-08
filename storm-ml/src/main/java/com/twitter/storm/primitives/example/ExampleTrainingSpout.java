@@ -10,12 +10,12 @@ public class ExampleTrainingSpout extends BaseTrainingSpout {
 
     public static double get_label(Double x, Double y) {
         // arbitrary expected output (for testing purposes)
-        return (2 * x + -1 < y) ? 1.0 : -1.0;
+        return (2 * x + -1 > y) ? 1.0 : -1.0;
     }
 
     public void nextTuple() {
         if (this.samples_count < this.max_samples) {
-            Double x = 100 * Math.random();
+            Double x = 10 * Math.random();
             Double y = 5.0;
             double label = ExampleTrainingSpout.get_label(x, y);
 
