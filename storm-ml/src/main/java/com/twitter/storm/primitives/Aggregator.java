@@ -1,4 +1,4 @@
-package com.twitter.algorithms;
+package com.twitter.storm.primitives;
 
 import java.io.IOException;
 import java.util.List;

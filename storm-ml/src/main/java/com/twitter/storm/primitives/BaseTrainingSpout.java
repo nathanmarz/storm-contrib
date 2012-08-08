@@ -9,13 +9,13 @@ import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 
 public abstract class BaseTrainingSpout extends BaseRichSpout {
-    SpoutOutputCollector _collector;
+    protected SpoutOutputCollector _collector;
 
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         this._collector = collector;
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("example", "label"));
+        declarer.declare(new Fields("example-x", "example-y", "label"));
     }
 }

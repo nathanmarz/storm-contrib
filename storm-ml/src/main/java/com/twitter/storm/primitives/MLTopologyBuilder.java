@@ -8,15 +8,12 @@ import backtype.storm.topology.IBasicBolt;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.TopologyBuilder;
 
-import com.twitter.algorithms.Aggregator;
-
 public class MLTopologyBuilder {
 
-    public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
-
     String topology_prefix;
+    String memcached_servers;
 
-    TrainingSpout training_spout;
+    BaseTrainingSpout training_spout;
     Number training_spout_parallelism;
 
     IBasicBolt basic_training_bolt;
@@ -27,27 +24,28 @@ public class MLTopologyBuilder {
     IRichBolt rich_evaluation_bolt;
     Number evaluation_bolt_parallelism;
 
-    public MLTopologyBuilder(String topologyPrefix) {
+    public MLTopologyBuilder(String topologyPrefix, String memcached_servers) {
+        this.memcached_servers = memcached_servers;
         this.topology_prefix = topologyPrefix;
     }
 
     public TopologyBuilder prepareTopology(String drpcFunctionName, ILocalDRPC drpc) {
-        return prepareTopology(drpcFunctionName, drpc, 1.0, 0.0, 0.5, MEMCACHED_SERVERS);
+        return prepareTopology(drpcFunctionName, drpc, 1.0, 0.0, 0.5);
     }
 
-    public void setTrainingSpout(TrainingSpout trainingSpout, Number parallelism) {
-        this.training_spout = trainingSpout;
-        this.training_spout_parallelism = training_spout_parallelism;
+    public void setTrainingSpout(BaseTrainingSpout exampleTrainingSpout, Number parallelism) {
+        this.training_spout = exampleTrainingSpout;
+        this.training_spout_parallelism = parallelism;
     }
 
-    public void setTrainingSpout(TrainingSpout trainingSpout) {
-        setTrainingSpout(trainingSpout, 1);
+    public void setTrainingSpout(BaseTrainingSpout exampleTrainingSpout) {
+        setTrainingSpout(exampleTrainingSpout, 1);
     }
 
     public void setTrainingBolt(IBasicBolt training_bolt, Number parallelism) {
         this.basic_training_bolt = training_bolt;
         this.rich_training_bolt = null;
-        this.training_bolt_parallelism = training_bolt_parallelism;
+        this.training_bolt_parallelism = parallelism;
     }
 
     public void setTrainingBolt(IBasicBolt training_bolt) {
@@ -57,7 +55,7 @@ public class MLTopologyBuilder {
     public void setTrainingBolt(IRichBolt training_bolt, Number parallelism) {
         this.rich_training_bolt = training_bolt;
         this.basic_training_bolt = null;
-        this.training_bolt_parallelism = training_bolt_parallelism;
+        this.training_bolt_parallelism = parallelism;
     }
 
     public void setTrainingBolt(IRichBolt training_bolt) {
@@ -67,7 +65,7 @@ public class MLTopologyBuilder {
     public void setEvaluationBolt(IBasicBolt evaluation_bolt, Number parallelism) {
         this.basic_evaluation_bolt = evaluation_bolt;
         this.rich_evaluation_bolt = null;
-        this.evaluation_bolt_parallelism = evaluation_bolt_parallelism;
+        this.evaluation_bolt_parallelism = parallelism;
     }
 
     public void setEvaluationBolt(IBasicBolt evaluation_bolt) {
@@ -77,7 +75,7 @@ public class MLTopologyBuilder {
     public void setEvaluationBolt(IRichBolt evaluation_bolt, Number parallelism) {
         this.rich_evaluation_bolt = evaluation_bolt;
         this.basic_evaluation_bolt = null;
-        this.evaluation_bolt_parallelism = evaluation_bolt_parallelism;
+        this.evaluation_bolt_parallelism = parallelism;
     }
 
     public void setEvaluationBolt(IRichBolt evaluation_bolt) {
@@ -85,7 +83,7 @@ public class MLTopologyBuilder {
     }
 
     public TopologyBuilder prepareTopology(String drpcFunctionName, ILocalDRPC drpc, double bias, double threshold,
-            double learning_rate, String memcached_servers) {
+            double learning_rate) {
         TopologyBuilder topology_builder = new TopologyBuilder();
 
         // training
@@ -99,7 +97,7 @@ public class MLTopologyBuilder {
             topology_builder.setBolt(this.topology_prefix + "-training-bolt", this.rich_training_bolt,
                     this.training_bolt_parallelism).shuffleGrouping(this.topology_prefix + "-training-spout");
         }
-        topology_builder.setBolt("aggregator", new Aggregator(MEMCACHED_SERVERS)).globalGrouping(
+        topology_builder.setBolt("aggregator", new Aggregator(this.memcached_servers)).globalGrouping(
                 this.topology_prefix + "-training-bolt");
 
         // evaluation

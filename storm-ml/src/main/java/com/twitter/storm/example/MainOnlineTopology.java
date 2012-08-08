@@ -1,7 +1,4 @@
-package com.twitter;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.twitter.storm.example;
 
 import net.spy.memcached.AddrUtil;
 import net.spy.memcached.MemcachedClient;
@@ -12,9 +9,9 @@ import backtype.storm.LocalDRPC;
 import backtype.storm.utils.Utils;
 
 import com.twitter.storm.primitives.EvaluationBolt;
-import com.twitter.storm.primitives.LocalLearner;
 import com.twitter.storm.primitives.MLTopologyBuilder;
-import com.twitter.storm.primitives.TrainingSpout;
+import com.twitter.storm.primitives.example.ExampleTrainingSpout;
+import com.twitter.storm.primitives.example.LocalLearner;
 
 public class MainOnlineTopology {
     public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
@@ -23,7 +20,7 @@ public class MainOnlineTopology {
 
     public static void main(String[] args) throws Exception {
         MemcachedClient memcache = new MemcachedClient(AddrUtil.getAddresses(MEMCACHED_SERVERS));
-        OperationFuture promise = memcache.set("model", 0, "[0.0, 0.0]");
+        OperationFuture promise = memcache.set("model", 0, "[0.1, -0.1]");
         promise.get();
 
         Config topology_conf = new Config();
@@ -33,9 +30,9 @@ public class MainOnlineTopology {
         else
             topology_name = args[0];
 
-        MLTopologyBuilder ml_topology_builder = new MLTopologyBuilder(topology_name);
+        MLTopologyBuilder ml_topology_builder = new MLTopologyBuilder(topology_name, MEMCACHED_SERVERS);
 
-        ml_topology_builder.setTrainingSpout(new TrainingSpout());
+        ml_topology_builder.setTrainingSpout(new ExampleTrainingSpout());
         ml_topology_builder.setTrainingBolt(new LocalLearner(2, MEMCACHED_SERVERS));
         ml_topology_builder.setEvaluationBolt(new EvaluationBolt(1.0, 2.0, MEMCACHED_SERVERS));
 
