@@ -20,7 +20,7 @@ public class MainOnlineTopology {
 
     public static void main(String[] args) throws Exception {
         MemcachedClient memcache = new MemcachedClient(AddrUtil.getAddresses(MEMCACHED_SERVERS));
-        OperationFuture promise = memcache.set("model", 0, "[0.1, 0.1]");
+        OperationFuture promise = memcache.set("model", 0, "[0.1, -0.1]");
         promise.get();
 
         Config topology_conf = new Config();
@@ -30,7 +30,7 @@ public class MainOnlineTopology {
         else
             topology_name = args[0];
 
-        MLTopologyBuilder ml_topology_builder = new MLTopologyBuilder(topology_name);
+        MLTopologyBuilder ml_topology_builder = new MLTopologyBuilder(topology_name, MEMCACHED_SERVERS);
 
         ml_topology_builder.setTrainingSpout(new ExampleTrainingSpout());
         ml_topology_builder.setTrainingBolt(new LocalLearner(2, MEMCACHED_SERVERS));

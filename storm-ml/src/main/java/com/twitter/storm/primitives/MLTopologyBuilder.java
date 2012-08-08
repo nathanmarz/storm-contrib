@@ -10,9 +10,8 @@ import backtype.storm.topology.TopologyBuilder;
 
 public class MLTopologyBuilder {
 
-    public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
-
     String topology_prefix;
+    String memcached_servers;
 
     BaseTrainingSpout training_spout;
     Number training_spout_parallelism;
@@ -25,12 +24,13 @@ public class MLTopologyBuilder {
     IRichBolt rich_evaluation_bolt;
     Number evaluation_bolt_parallelism;
 
-    public MLTopologyBuilder(String topologyPrefix) {
+    public MLTopologyBuilder(String topologyPrefix, String memcached_servers) {
+        this.memcached_servers = memcached_servers;
         this.topology_prefix = topologyPrefix;
     }
 
     public TopologyBuilder prepareTopology(String drpcFunctionName, ILocalDRPC drpc) {
-        return prepareTopology(drpcFunctionName, drpc, 1.0, 0.0, 0.5, MEMCACHED_SERVERS);
+        return prepareTopology(drpcFunctionName, drpc, 1.0, 0.0, 0.5);
     }
 
     public void setTrainingSpout(BaseTrainingSpout exampleTrainingSpout, Number parallelism) {
@@ -83,7 +83,7 @@ public class MLTopologyBuilder {
     }
 
     public TopologyBuilder prepareTopology(String drpcFunctionName, ILocalDRPC drpc, double bias, double threshold,
-            double learning_rate, String memcached_servers) {
+            double learning_rate) {
         TopologyBuilder topology_builder = new TopologyBuilder();
 
         // training
@@ -97,7 +97,7 @@ public class MLTopologyBuilder {
             topology_builder.setBolt(this.topology_prefix + "-training-bolt", this.rich_training_bolt,
                     this.training_bolt_parallelism).shuffleGrouping(this.topology_prefix + "-training-spout");
         }
-        topology_builder.setBolt("aggregator", new Aggregator(MEMCACHED_SERVERS)).globalGrouping(
+        topology_builder.setBolt("aggregator", new Aggregator(this.memcached_servers)).globalGrouping(
                 this.topology_prefix + "-training-bolt");
 
         // evaluation
