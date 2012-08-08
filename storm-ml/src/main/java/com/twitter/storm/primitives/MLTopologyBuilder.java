@@ -8,7 +8,6 @@ import backtype.storm.topology.IBasicBolt;
 import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.TopologyBuilder;
 
-
 public class MLTopologyBuilder {
 
     public static final String MEMCACHED_SERVERS = "127.0.0.1:11211";
@@ -36,7 +35,7 @@ public class MLTopologyBuilder {
 
     public void setTrainingSpout(BaseTrainingSpout exampleTrainingSpout, Number parallelism) {
         this.training_spout = exampleTrainingSpout;
-        this.training_spout_parallelism = training_spout_parallelism;
+        this.training_spout_parallelism = parallelism;
     }
 
     public void setTrainingSpout(BaseTrainingSpout exampleTrainingSpout) {
@@ -46,7 +45,7 @@ public class MLTopologyBuilder {
     public void setTrainingBolt(IBasicBolt training_bolt, Number parallelism) {
         this.basic_training_bolt = training_bolt;
         this.rich_training_bolt = null;
-        this.training_bolt_parallelism = training_bolt_parallelism;
+        this.training_bolt_parallelism = parallelism;
     }
 
     public void setTrainingBolt(IBasicBolt training_bolt) {
@@ -56,7 +55,7 @@ public class MLTopologyBuilder {
     public void setTrainingBolt(IRichBolt training_bolt, Number parallelism) {
         this.rich_training_bolt = training_bolt;
         this.basic_training_bolt = null;
-        this.training_bolt_parallelism = training_bolt_parallelism;
+        this.training_bolt_parallelism = parallelism;
     }
 
     public void setTrainingBolt(IRichBolt training_bolt) {
@@ -66,7 +65,7 @@ public class MLTopologyBuilder {
     public void setEvaluationBolt(IBasicBolt evaluation_bolt, Number parallelism) {
         this.basic_evaluation_bolt = evaluation_bolt;
         this.rich_evaluation_bolt = null;
-        this.evaluation_bolt_parallelism = evaluation_bolt_parallelism;
+        this.evaluation_bolt_parallelism = parallelism;
     }
 
     public void setEvaluationBolt(IBasicBolt evaluation_bolt) {
@@ -76,7 +75,7 @@ public class MLTopologyBuilder {
     public void setEvaluationBolt(IRichBolt evaluation_bolt, Number parallelism) {
         this.rich_evaluation_bolt = evaluation_bolt;
         this.basic_evaluation_bolt = null;
-        this.evaluation_bolt_parallelism = evaluation_bolt_parallelism;
+        this.evaluation_bolt_parallelism = parallelism;
     }
 
     public void setEvaluationBolt(IRichBolt evaluation_bolt) {

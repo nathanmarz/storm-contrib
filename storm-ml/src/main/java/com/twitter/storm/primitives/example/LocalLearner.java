@@ -48,8 +48,6 @@ public class LocalLearner extends BaseRichBolt implements ICommitter {
             // this.hashFunction = hashAll;
             this.memcached_servers = memcached_servers;
             weightVector = new double[dimension];
-            weightVector[0] = -6.8;
-            weightVector[1] = -0.8;
             learner.setWeights(weightVector);
         } catch (Exception e) {
 
