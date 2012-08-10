@@ -7,8 +7,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
+import backtype.storm.Config;
+import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.utils.Utils;
+import backtype.storm.topology.OutputFieldsDeclarer;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.Bytes;
@@ -34,7 +36,7 @@ import com.mongodb.MongoException;
 * @author Dan Beaulieu <danjacob.beaulieu@gmail.com>
 *
 */
-public abstract class MongoSpout implements IRichSpout {
+public abstract class MongoSpout extends BaseRichSpout {
 
 	private SpoutOutputCollector collector;
 	
@@ -155,11 +157,12 @@ public abstract class MongoSpout implements IRichSpout {
 		// TODO Auto-generated method stub	
 	}
 
-	@Override
-	public boolean isDistributed() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        Config ret = new Config();
+        ret.setMaxTaskParallelism(1);
+        return ret;
+    }
 	
 	public abstract List<Object> dbObjectToStormTuple(DBObject message);
 
