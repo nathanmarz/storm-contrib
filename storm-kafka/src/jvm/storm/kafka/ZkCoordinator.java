@@ -1,7 +1,6 @@
 package storm.kafka;
 
 import backtype.storm.Config;
-import backtype.storm.transactional.state.TransactionalState;
 import backtype.storm.utils.Utils;
 import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.curator.framework.CuratorFrameworkFactory;
@@ -21,10 +20,9 @@ import storm.kafka.KafkaConfig.ZkHosts;
 public class ZkCoordinator implements PartitionCoordinator {
     public static Logger LOG = Logger.getLogger(ZkCoordinator.class);
     
-    SpoutConfig _config;
+    SpoutConfig _spoutConfig;
     int _taskIndex;
     int _totalTasks;
-    TransactionalState _state;
     String _topologyInstanceId;
     CuratorFramework _curator;
     Map<GlobalPartitionId, PartitionManager> _managers = new HashMap();
@@ -33,30 +31,31 @@ public class ZkCoordinator implements PartitionCoordinator {
     int _refreshFreqMs;
     ZkHosts _brokerConf;
     DynamicPartitionConnections _connections;
+    ZkState _state;
+    Map _stormConf;
     
-    public ZkCoordinator(DynamicPartitionConnections connections, Map conf, SpoutConfig config, int taskIndex, int totalTasks, TransactionalState state, String topologyInstanceId) {
-        _config = config;
+    public ZkCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId) {
+        _spoutConfig = spoutConfig;
         _connections = connections;
         _taskIndex = taskIndex;
         _totalTasks = totalTasks;
-        _state = state;
         _topologyInstanceId = topologyInstanceId;
+        _stormConf = stormConf;
+	_state = state;
                 
-                
-        _brokerConf = (ZkHosts) config.hosts;
+        _brokerConf = (ZkHosts) _spoutConfig.hosts;
         _refreshFreqMs = _brokerConf.refreshFreqSecs * 1000;
         try {
             _curator = CuratorFrameworkFactory.newClient(
                     _brokerConf.brokerZkStr,
-                    Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
+                    Utils.getInt(stormConf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
                     15000,
-                    new RetryNTimes(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
-                    Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
+                    new RetryNTimes(Utils.getInt(stormConf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
+                    Utils.getInt(stormConf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
             _curator.start();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        
     }
     
     @Override
@@ -71,7 +70,7 @@ public class ZkCoordinator implements PartitionCoordinator {
     void refresh() {
         try {
             LOG.info("Refreshing partition manager connections");
-            String topicBrokersPath = _brokerConf.brokerZkPath + "/topics/" + _config.topic;
+            String topicBrokersPath = _brokerConf.brokerZkPath + "/topics/" + _spoutConfig.topic;
             String brokerInfoPath = _brokerConf.brokerZkPath + "/ids";
             List<String> children = _curator.getChildren().forPath(topicBrokersPath);
             
@@ -80,8 +79,6 @@ public class ZkCoordinator implements PartitionCoordinator {
                 try {
                     byte[] numPartitionsData = _curator.getData().forPath(topicBrokersPath + "/" + c);
                     byte[] hostPortData = _curator.getData().forPath(brokerInfoPath + "/" + c);
-
-
 
                     HostPort hp = getBrokerHost(hostPortData);
                     int numPartitions = getNumPartitions(numPartitionsData);
@@ -112,7 +109,7 @@ public class ZkCoordinator implements PartitionCoordinator {
             LOG.info("New partition managers: " + newPartitions.toString());
             
             for(GlobalPartitionId id: newPartitions) {
-                PartitionManager man = new PartitionManager(_connections, _topologyInstanceId, _config, _state, id);
+                PartitionManager man = new PartitionManager(_connections, _topologyInstanceId, _state, _stormConf, _spoutConfig, id);
                 _managers.put(id, man);
             }
             
