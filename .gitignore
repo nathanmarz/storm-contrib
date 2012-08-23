@@ -2,3 +2,4 @@
 classes/
 lib/
 *.jar
+/storm-kafka/target/
