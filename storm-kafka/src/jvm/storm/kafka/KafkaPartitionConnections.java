@@ -1,18 +1,19 @@
 package storm.kafka;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
 import kafka.javaapi.consumer.SimpleConsumer;
 
 public class KafkaPartitionConnections {
     Map<Integer, SimpleConsumer> _kafka = new HashMap<Integer, SimpleConsumer>();
     
     KafkaConfig _config;
+    boolean zkBrokersLoaded = false;
     
     public KafkaPartitionConnections(KafkaConfig conf) {
         _config = conf;
     }
-    
+
     public SimpleConsumer getConsumer(int partition) {
         int hostIndex = partition / _config.partitionsPerHost;
         if(!_kafka.containsKey(hostIndex)) {

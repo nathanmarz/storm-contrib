@@ -48,4 +48,21 @@ public class KafkaConfig implements Serializable {
         }
         return ret;
     }
+
+    public static List<HostPortZk> convertHostsZk(List<String> hosts) {
+        List<HostPortZk> ret = new ArrayList<HostPortZk>();
+        for(String s: hosts) {
+            HostPortZk hp;
+            String[] spec = s.split(":");
+            if(spec.length==1) {
+                hp = new HostPortZk(spec[0]);
+            } else if (spec.length==2) {
+                hp = new HostPortZk(spec[0], Integer.parseInt(spec[1]));
+            } else {
+                throw new IllegalArgumentException("Invalid host specification: " + s);
+            }
+            ret.add(hp);
+        }
+        return ret;
+    }
 }
