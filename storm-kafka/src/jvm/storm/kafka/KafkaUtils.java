@@ -20,6 +20,13 @@ public class KafkaUtils {
          if(lastMeta!=null) {
              offset = lastMeta.nextOffset;
          }
+         else {
+             long startTime = -2; // start from beginning
+             if(config.forceFromStart) {
+                 startTime = config.startOffsetTime;
+             }
+             offset = consumer.getOffsetsBefore(config.topic, partition % hosts.partitionsPerHost, startTime, 1)[0];
+         }
          ByteBufferMessageSet msgs;
          try {
             msgs = consumer.fetch(new FetchRequest(config.topic, partition % config.partitionsPerHost, offset, config.fetchSizeBytes));
