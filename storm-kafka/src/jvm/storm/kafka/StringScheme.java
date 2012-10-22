@@ -8,6 +8,17 @@ import java.util.List;
 
 public class StringScheme implements Scheme {
 
+    private String outputFieldName;
+
+    public StringScheme() {
+        this("str");
+    }
+
+    public StringScheme(String outputFieldName) {
+        this.outputFieldName = outputFieldName;
+
+    }
+
     public List<Object> deserialize(byte[] bytes) {
         try {
             return new Values(new String(bytes, "UTF-8"));
@@ -17,6 +28,7 @@ public class StringScheme implements Scheme {
     }
 
     public Fields getOutputFields() {
-        return new Fields("str");
+        return new Fields(outputFieldName);
     }
 }
+
