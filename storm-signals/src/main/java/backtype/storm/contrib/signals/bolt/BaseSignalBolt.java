@@ -1,6 +1,6 @@
 // Copyright (c) P. Taylor Goetz (ptgoetz@gmail.com)
 
-package backtype.storm.contrib.signals.spout;
+package backtype.storm.contrib.signals.bolt;
 
 import java.util.Map;
 
@@ -9,41 +9,45 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.contrib.signals.StormSignalConnection;
 import backtype.storm.contrib.signals.SignalListener;
-import backtype.storm.spout.SpoutOutputCollector;
+import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichSpout;
+import backtype.storm.topology.base.BaseRichBolt;
+import backtype.storm.tuple.Tuple;
 
 @SuppressWarnings("serial")
-public abstract class BaseSignalSpout extends BaseRichSpout implements SignalListener {
+public abstract class BaseSignalBolt extends BaseRichBolt implements SignalListener {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BaseSignalSpout.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BaseSignalBolt.class);
     private String name;
     private StormSignalConnection signalConnection;
 
-    public BaseSignalSpout(String name) {
+    public BaseSignalBolt(String name) {
         this.name = name;
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
         try {
             this.signalConnection = new StormSignalConnection(this.name, this);
             this.signalConnection.init(conf);
         } catch (Exception e) {
-            LOG.error("Error creating SignalConnection.", e);
+            LOG.error("Error SignalConnection.", e);
         }
     }
+
     
     public void sendSignal(String toPath, byte[] signal)throws Exception {
         this.signalConnection.send(toPath, signal);
     }
 
     @Override
-    public void close() {
-        super.close();
+    public void cleanup() {
+        // TODO Auto-generated method stub
+        super.cleanup();
         this.signalConnection.close();
+
     }
 
 }

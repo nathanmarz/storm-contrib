@@ -6,10 +6,23 @@
 		<version>7</version>
 	</parent>
 
+	<distributionManagement>
+	    <repository>
+	        <id>releases</id>
+	        <url>https://artifactory.spotify.net/artifactory/libs-release-local/</url>
+	    </repository>
+
+	    <snapshotRepository>
+	        <id>snapshots</id>
+	        <name>Internal Snapshots</name>
+	        <url>https://artifactory.spotify.net/artifactory/libs-snapshot-local/</url>
+	    </snapshotRepository>
+	</distributionManagement>
+
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.ptgoetz</groupId>
 	<artifactId>storm-signals</artifactId>
-	<version>0.1.0</version>
+	<version>0.2.0</version>
 	<name>Storm Signals</name>
 	<description>Storm Signals</description>
 
@@ -20,7 +33,7 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
-	
+
 	<scm>
 		<connection>scm:git:git@github.com:ptgoetz/storm-signals.git</connection>
 		<developerConnection>scm:git:git@github.com:ptgoetz/storm-signals.git</developerConnection>
@@ -33,8 +46,14 @@
 			<email>ptgoetz@gmail.com</email>
 		</developer>
 	</developers>
+	<repositories>
+		<repository>
+			<id>clojars.org</id>
+			<url>http://clojars.org/repo</url>
+		</repository>
+	</repositories>
 	<properties>
-		<storm.version>0.7.0</storm.version>
+		<storm.version>0.8.0</storm.version>
 	</properties>
 	<dependencies>
 		<dependency>
