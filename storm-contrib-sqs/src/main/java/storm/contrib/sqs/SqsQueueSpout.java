@@ -17,7 +17,7 @@ import com.amazonaws.services.sqs.model.ReceiveMessageResult;
 
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
+import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.utils.Utils;
 
 /**
@@ -51,7 +51,7 @@ import backtype.storm.utils.Utils;
  * @author Adrian Petrescu <apetresc@gmail.com>
  *
  */
-public abstract class SqsQueueSpout implements IRichSpout {
+public abstract class SqsQueueSpout extends BaseRichSpout {
 	private SpoutOutputCollector collector;
 	private AmazonSQSAsync sqs;
 	
@@ -175,11 +175,6 @@ public abstract class SqsQueueSpout implements IRichSpout {
 		// Works around a known bug in the Async clients
 		// @see https://forums.aws.amazon.com/thread.jspa?messageID=305371
 		((AmazonSQSAsyncClient) sqs).getExecutorService().shutdownNow();
-	}
-
-	@Override
-	public boolean isDistributed() {
-		return false;
 	}
 
 }
