@@ -3,3 +3,4 @@ classes/
 lib/
 *.jar
 /storm-kafka/target/
+/storm-kafka/.idea/
