@@ -1,4 +1,4 @@
-(defproject storm/storm-kafka "0.9.0-wip17a-experimental-scala292"
+(defproject storm/storm-kafka "0.9.0-wip18a-experimental-scala292"
   :java-source-paths ["src/jvm"]
   :repositories {"scala-tools" "http://scala-tools.org/repo-releases"
                   "conjars" "http://conjars.org/repo/"}
@@ -7,7 +7,7 @@
                   :exclusions [org.apache.zookeeper/zookeeper
                                log4j/log4j]]]
   :profiles
-  {:provided {:dependencies [[storm "0.9.0-wip17-experimental"]
+  {:provided {:dependencies [[storm "0.9.0-wip18-experimental"]
                              [org.slf4j/log4j-over-slf4j "1.6.6"]
                              ;;[ch.qos.logback/logback-classic "1.0.6"]
                              [org.clojure/clojure "1.4.0"]]}}
