@@ -8,6 +8,9 @@ import java.util.List;
 
 public class StringScheme implements Scheme {
 
+    public void prepare(java.util.Map conf, backtype.storm.task.TopologyContext context) {
+    }
+
     public List<Object> deserialize(byte[] bytes) {
         try {
             return new Values(new String(bytes, "UTF-8"));

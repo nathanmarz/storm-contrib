@@ -3,6 +3,7 @@ package storm.kafka;
 import java.util.*;
 
 import backtype.storm.metric.api.IMetric;
+import backtype.storm.task.IErrorReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +90,8 @@ public class KafkaSpout extends BaseRichSpout {
                 return _kafkaOffsetMetric.getValueAndReset();
             }
         }, 60);
+
+        _spoutConfig.scheme.prepare(conf, context);
     }
 
     @Override

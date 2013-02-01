@@ -1,6 +1,7 @@
 package storm.kafka.trident;
 
 import backtype.storm.Config;
+import backtype.storm.task.IErrorReporter;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Fields;
 import com.google.common.collect.ImmutableMap;
@@ -29,7 +30,9 @@ public class OpaqueTridentKafkaSpout implements IOpaquePartitionedTridentSpout<M
     
     @Override
     public IOpaquePartitionedTridentSpout.Emitter<Map<String, List>, GlobalPartitionId, Map> getEmitter(Map conf, TopologyContext context) {
-        return new Emitter(conf, context);
+        IOpaquePartitionedTridentSpout.Emitter emitter = new Emitter(conf, context);
+        _config.scheme.prepare(conf, context);
+        return emitter;
     }
     
     @Override

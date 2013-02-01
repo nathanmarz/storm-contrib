@@ -19,19 +19,15 @@ public class DynamicBrokersReader {
     String _topic;
     
     public DynamicBrokersReader(Map conf, String zkStr, String zkPath, String topic) {
-        try {
-            _zkPath = zkPath;
-            _topic = topic;
-            _curator = CuratorFrameworkFactory.newClient(
-                    zkStr,
-                    Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
-                    15000,
-                    new RetryNTimes(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
-                    Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
-            _curator.start();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        _zkPath = zkPath;
+        _topic = topic;
+        _curator = CuratorFrameworkFactory.newClient(
+                zkStr,
+                Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT)),
+                15000,
+                new RetryNTimes(Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_TIMES)),
+                Utils.getInt(conf.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL))));
+        _curator.start();
     }
     
     /**
