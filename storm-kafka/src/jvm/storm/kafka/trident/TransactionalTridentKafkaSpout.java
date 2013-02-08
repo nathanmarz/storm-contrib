@@ -120,8 +120,8 @@ public class TransactionalTridentKafkaSpout implements IPartitionedTridentSpout<
 
     @Override
     public IPartitionedTridentSpout.Emitter getEmitter(Map conf, TopologyContext context) {
-        Emitter emitter = new Emitter(conf, context);
         _config.scheme.prepare(conf, context);
+        Emitter emitter = new Emitter(conf, context);
         return emitter;
     }
 
