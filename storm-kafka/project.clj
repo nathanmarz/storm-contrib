@@ -1,4 +1,4 @@
-(defproject storm/storm-kafka "0.9.0-wip18a-experimental-scala292"
+(defproject storm/storm-kafka "0.9.0-wip18b-experimental-scala292"
   :java-source-paths ["src/jvm"]
   :repositories {"scala-tools" "http://scala-tools.org/repo-releases"
                   "conjars" "http://conjars.org/repo/"}
