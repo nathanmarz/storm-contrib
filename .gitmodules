@@ -1,0 +1,9 @@
+[submodule "storm-cassandra"]
+	path = storm-cassandra
+	url = git@github.com:hmsonline/storm-cassandra.git
+[submodule "storm-jms"]
+	path = storm-jms
+	url = git@github.com:ptgoetz/storm-jms.git
+[submodule "storm-signals"]
+	path = storm-signals
+	url = git@github.com:ptgoetz/storm-signals.git
