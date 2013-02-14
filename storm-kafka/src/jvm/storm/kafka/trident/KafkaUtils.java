@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import kafka.api.FetchRequest;
+import kafka.common.OffsetOutOfRangeException;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.Message;
@@ -15,8 +16,8 @@ import storm.trident.operation.TridentCollector;
 import storm.trident.topology.TransactionAttempt;
 
 public class KafkaUtils {
-    
-    
+
+
      public static Map emitPartitionBatchNew(TridentKafkaConfig config, int partition, SimpleConsumer consumer, TransactionAttempt attempt, TridentCollector collector, Map lastMeta, String topologyInstanceId) {
          StaticHosts hosts = (StaticHosts) config.hosts;
          long offset;
@@ -24,7 +25,7 @@ public class KafkaUtils {
              if(config.forceFromStart && !topologyInstanceId.equals(lastMeta.get("instanceId"))) {
                  offset = consumer.getOffsetsBefore(config.topic, partition % hosts.partitionsPerHost, config.startOffsetTime, 1)[0];
              } else {
-                 offset = (Long) lastMeta.get("nextOffset");                 
+                 offset = (Long) lastMeta.get("nextOffset");
              }
          } else {
              long startTime = -1;
@@ -34,6 +35,16 @@ public class KafkaUtils {
          ByteBufferMessageSet msgs;
          try {
             msgs = consumer.fetch(new FetchRequest(config.topic, partition % hosts.partitionsPerHost, offset, config.fetchSizeBytes));
+         } catch (OffsetOutOfRangeException _) {
+             long timeStamp = lastMeta.get("timeStamp")!=null? (Long) lastMeta.get("timeStamp"):0L;
+             long[] offsets = consumer.getOffsetsBefore(config.topic, partition % hosts.partitionsPerHost, timeStamp, 1);
+             if(offsets!=null && offsets.length > 0)
+                 offset = offsets[0];
+             else
+                 offset = 0L;
+
+             msgs = consumer.fetch(new FetchRequest(config.topic, partition % hosts.partitionsPerHost, offset, config.fetchSizeBytes));
+
          } catch(Exception e) {
              if(e instanceof ConnectException) {
                  throw new FailedFetchException(e);
@@ -52,7 +63,7 @@ public class KafkaUtils {
          newMeta.put("instanceId", topologyInstanceId);
          return newMeta;
      }
-     
+
      public static void emit(TridentKafkaConfig config, TransactionAttempt attempt, TridentCollector collector, Message msg) {
          List<Object> values = config.scheme.deserialize(Utils.toByteArray(msg.payload()));
          if(values!=null) {
