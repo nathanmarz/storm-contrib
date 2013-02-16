@@ -57,6 +57,8 @@ public class TestGrowlTopology {
 	public static class GrowlTestSpout extends BaseRichSpout{
 		
 		SpoutOutputCollector _collector;
+		
+		@SuppressWarnings("rawtypes")
 		@Override
 		public void open(Map conf, TopologyContext context,
 				SpoutOutputCollector collector) {
@@ -72,10 +74,6 @@ public class TestGrowlTopology {
 	        Utils.sleep(5000);
 		}
 		
-		@Override
-		public void close() {
-		}
-
 		@Override
 		public Map<String, Object> getComponentConfiguration() {
 			Config conf = new Config();			

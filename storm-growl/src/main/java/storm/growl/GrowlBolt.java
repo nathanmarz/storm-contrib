@@ -66,7 +66,8 @@ public class GrowlBolt extends BaseBasicBolt
     	
     }    
     
-    @Override
+    @SuppressWarnings("rawtypes")
+	@Override
 	public void prepare(Map stormConf, TopologyContext context) {
     	_application = new Application(name);
     	_notificationType = new NotificationType(notificationTypeId, name, iconUrl);
@@ -80,6 +81,7 @@ public class GrowlBolt extends BaseBasicBolt
     	}
 	}
     
+    @Override
     public void execute(Tuple tuple, BasicOutputCollector collector) {
         /*
          * tuple must contains Fields named "title" and "message".
@@ -99,12 +101,9 @@ public class GrowlBolt extends BaseBasicBolt
 		}
 		collector.emit(new Values(title, message));
 
-    }
+    }	
 
 	@Override
-	public void cleanup() {
-	}
-
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("title", "message"));
     }
