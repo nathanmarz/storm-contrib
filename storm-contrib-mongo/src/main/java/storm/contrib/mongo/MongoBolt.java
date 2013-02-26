@@ -10,7 +10,7 @@ import com.mongodb.WriteConcern;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichBolt;
+import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
 
 /**
@@ -22,7 +22,7 @@ import backtype.storm.tuple.Tuple;
  * @author Adrian Petrescu <apetresc@gmail.com>
  *
  */
-public abstract class MongoBolt implements IRichBolt {
+public abstract class MongoBolt extends BaseRichBolt {
 	private OutputCollector collector;
 	private DB mongoDB;
 	
