@@ -4,6 +4,7 @@ package backtype.storm.contrib.signals.client;
 
 import java.io.IOException;
 
+import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,11 @@ public class SignalClient {
     }
 
     public void send(byte[] signal) throws Exception {
+        Stat stat = this.client.checkExists().forPath(this.name);
+        if (stat == null) {
+            String path = this.client.create().creatingParentsIfNeeded().forPath(this.name);
+            LOG.info("Created: " + path);
+        }
         this.client.setData().forPath(this.name, signal);
     }
 
@@ -45,7 +51,7 @@ public class SignalClient {
      * @param args
      */
     public static void main(String[] args) throws Exception {
-        SignalClient sc = new SignalClient("localhost:2181", "test-signal-spout1");
+        SignalClient sc = new SignalClient("localhost:2000", "test-signal-spout");
         sc.start();
         try {
             sc.send("Hello Signal Spout!".getBytes());
