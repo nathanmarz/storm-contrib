@@ -35,6 +35,7 @@ public class KafkaUtils {
          ByteBufferMessageSet msgs;
          try {
             msgs = consumer.fetch(new FetchRequest(config.topic, partition % hosts.partitionsPerHost, offset, config.fetchSizeBytes));
+            msgs.underlying().size();
          } catch (OffsetOutOfRangeException _) {
              long timeStamp = lastMeta.get("timeStamp")!=null? (Long) lastMeta.get("timeStamp"):0L;
              long[] offsets = consumer.getOffsetsBefore(config.topic, partition % hosts.partitionsPerHost, timeStamp, 1);

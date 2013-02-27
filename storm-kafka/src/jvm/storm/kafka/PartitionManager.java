@@ -104,12 +104,20 @@ public class PartitionManager {
     private void fill() {
         //LOG.info("Fetching from Kafka: " + _consumer.host() + ":" + _partition.partition + " from offset " + _emittedToOffset);
         ByteBufferMessageSet msgs;
+        int numMessages = 0;
         try {
             msgs = _consumer.fetch(new FetchRequest(_spoutConfig.topic,
                                                     _partition.partition,
                                                     _emittedToOffset,
                                                     _spoutConfig.fetchSizeBytes));
+
+
+            numMessages = msgs.underlying().size();
+
         } catch (OffsetOutOfRangeException _) {
+            if (_timeStamp == null)
+                _timeStamp = new Date().getTime();
+
             long[] offsets = _consumer.getOffsetsBefore(_spoutConfig.topic, _partition.partition, _timeStamp, 1);
 
             if(offsets!=null && offsets.length > 0)
@@ -121,11 +129,15 @@ public class PartitionManager {
                                                     _partition.partition,
                                                     _emittedToOffset,
                                                     _spoutConfig.fetchSizeBytes));
+
+            numMessages = msgs.underlying().size();
         }
 
         _timeStamp = new Date().getTime();
 
-        int numMessages = msgs.underlying().size();
+
+        numMessages = msgs.underlying().size();
+
         if(numMessages>0) {
           LOG.info("Fetched " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition);
         }
