@@ -1,19 +1,18 @@
-(defproject storm/storm-kafka "0.8.2"
+(defproject storm/storm-kafka_2.9.2 "0.8.2"
   :source-path "src/clj"
   :java-source-path "src/jvm"
   :javac-options {:debug "true" :fork "true"}
-  :repositories {"releases" "http://artifactory.local.twitter.com/libs-releases-local"
-                 "snapshots" "http://artifactory.local.twitter.com/libs-snapshots-local"}
+  :repositories {"conjars" "http://conjars.org/repo/"}
 
 
   :dependencies [
-                 [storm/kafka "0.7.0-incubating"
+                 [com.twitter/kafka_2.9.2 "0.7.0"
                   :exclusions
                   [org.apache.zookeeper/zookeeper
                    log4j/log4j
                    ]
                   ]
-                 [org.scala-lang/scala-library "2.8.0"]
+                 [org.scala-lang/scala-library "2.9.2"]
 
                  ]
 
