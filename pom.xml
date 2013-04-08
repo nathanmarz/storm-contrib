@@ -29,8 +29,14 @@
   </repositories>
 
   <modules>
-    <module>storm-contrib-core</module>
-    <module>storm-contrib-mongo</module>
-    <module>storm-contrib-sqs</module>
+    <module>storm-contrib-clockspout</module>
+    <module>storm-hbase</module>
+    <module>storm-mongo</module>
+    <module>storm-signals</module>
+    <module>storm-rdbms</module>
+    <module>storm-cassandra</module>
+    <module>storm-jms</module>
+    <module>storm-growl</module>
+    <module>storm-sqs</module>
   </modules>
 </project>
