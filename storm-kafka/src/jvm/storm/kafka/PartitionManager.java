@@ -118,6 +118,12 @@ public class PartitionManager {
                                                 _emittedToOffset,
                                                 _spoutConfig.fetchSizeBytes));
 
+        try{
+            numMessages = msgs.underlying().size();
+        }catch(Throwable ex){
+            msgs = new ByteBufferMessageSet(msgs.getBuffer(), msgs.getInitialOffset(), ErrorMapping.codeFor((Class<Throwable>)ex.getClass()));
+        }
+
         if(msgs.getErrorCode() != ErrorMapping.NoError()){
             long[] offsets = _consumer.getOffsetsBefore(_spoutConfig.topic, _partition.partition, _spoutConfig.startOffsetTime, 1);
 
@@ -131,12 +137,14 @@ public class PartitionManager {
                                                     _emittedToOffset,
                                                     _spoutConfig.fetchSizeBytes));
 
+            numMessages = msgs.underlying().size();
+
             ErrorMapping.maybeThrowException(msgs.getErrorCode());
 
         }
 
 
-        numMessages = msgs.underlying().size();
+
 
         if(numMessages>0) {
           LOG.info("Fetched " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition);
@@ -150,6 +158,7 @@ public class PartitionManager {
           LOG.info("Added " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition + " to internal buffers");
         }
     }
+
 
     public void ack(Long offset) {
         _pending.remove(offset);
