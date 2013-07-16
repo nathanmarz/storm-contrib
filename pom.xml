@@ -31,7 +31,7 @@
 	<modules>
 		<module>storm-kafka</module>
 		<module>storm-rdbms</module>
-<!--
+
 		<module>storm-contrib-clockspout</module>
 		<module>storm-hbase</module>
 		<module>storm-mongo</module>
@@ -40,6 +40,5 @@
 		<module>storm-jms</module>
 		<module>storm-growl</module>
 		<module>storm-sqs</module> 
--->
 	</modules>
 </project>
