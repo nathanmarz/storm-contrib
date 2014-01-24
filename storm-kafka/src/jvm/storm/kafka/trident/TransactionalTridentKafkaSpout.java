@@ -2,7 +2,6 @@ package storm.kafka.trident;
 
 import backtype.storm.Config;
 import backtype.storm.metric.api.CombinedMetric;
-import backtype.storm.metric.api.IMetric;
 import backtype.storm.metric.api.MeanReducer;
 import backtype.storm.metric.api.ReducedMetric;
 import backtype.storm.task.TopologyContext;
@@ -11,7 +10,6 @@ import backtype.storm.tuple.Fields;
 import java.util.*;
 
 import kafka.api.FetchRequest;
-import kafka.api.OffsetRequest;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
@@ -19,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.DynamicPartitionConnections;
 import storm.kafka.GlobalPartitionId;
+import storm.kafka.KafkaUtils;
 import storm.trident.operation.TridentCollector;
 import storm.trident.spout.IPartitionedTridentSpout;
 import storm.trident.topology.TransactionAttempt;
@@ -91,7 +90,7 @@ public class TransactionalTridentKafkaSpout implements IPartitionedTridentSpout<
                 long offset = (Long) meta.get("offset");
                 long nextOffset = (Long) meta.get("nextOffset");
                 long start = System.nanoTime();
-                ByteBufferMessageSet msgs = consumer.fetch(new FetchRequest(_config.topic, partition.partition, offset, _config.fetchSizeBytes));
+                ByteBufferMessageSet msgs = KafkaUtils.fetchMessages(consumer, _config.topic, partition.partition, offset, _config.fetchSizeBytes);
                 long end = System.nanoTime();
                 long millis = (end - start) / 1000000;
                 _kafkaMeanFetchLatencyMetric.update(millis);
