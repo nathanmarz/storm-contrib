@@ -59,7 +59,7 @@ public class KafkaUtils {
 
         if (response.hasError()) {
             LOG.error("Received error while fetching messages from topic: " + topic + "on partition: " + partition);
-            return msgs;
+            // TODO: intelligently handle errors
         }
 
         msgs = response.messageSet(topic, partition);
