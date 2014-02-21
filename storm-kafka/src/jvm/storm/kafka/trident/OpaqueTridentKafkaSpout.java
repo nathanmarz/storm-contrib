@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import storm.kafka.DynamicPartitionConnections;
 import storm.kafka.GlobalPartitionId;
+import storm.kafka.KafkaUtils;
 import storm.trident.operation.TridentCollector;
 import storm.trident.spout.IOpaquePartitionedTridentSpout;
 import storm.trident.topology.TransactionAttempt;

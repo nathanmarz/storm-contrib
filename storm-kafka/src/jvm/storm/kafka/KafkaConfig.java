@@ -6,6 +6,7 @@ import java.util.List;
 
 import backtype.storm.spout.MultiScheme;
 import backtype.storm.spout.RawMultiScheme;
+import kafka.api.OffsetRequest;
 
 public class KafkaConfig implements Serializable {
     public static interface BrokerHosts extends Serializable {
@@ -52,14 +53,21 @@ public class KafkaConfig implements Serializable {
     public int bufferSizeBytes = 1024*1024;
     public MultiScheme scheme = new RawMultiScheme();
     public String topic;
+    public String clientId;
     public long startOffsetTime = -2;
     public boolean forceFromStart = false;
 
     public KafkaConfig(BrokerHosts hosts, String topic) {
         this.hosts = hosts;
         this.topic = topic;
+        this.clientId = OffsetRequest.DefaultClientId();
     }
 
+    public KafkaConfig(BrokerHosts hosts, String topic, String clientId) {
+        this.hosts = hosts;
+        this.topic = topic;
+        this.clientId = clientId;
+    }
 
     public void forceStartOffsetTime(long millis) {
         startOffsetTime = millis;

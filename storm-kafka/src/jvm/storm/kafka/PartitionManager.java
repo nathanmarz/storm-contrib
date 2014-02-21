@@ -7,7 +7,12 @@ import backtype.storm.utils.Utils;
 import com.google.common.collect.ImmutableMap;
 import java.util.*;
 import kafka.api.FetchRequest;
+import kafka.api.FetchRequestBuilder;
 import kafka.api.OffsetRequest;
+import kafka.api.PartitionOffsetRequestInfo;
+import kafka.common.TopicAndPartition;
+import kafka.javaapi.FetchResponse;
+import kafka.javaapi.OffsetResponse;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
@@ -70,10 +75,10 @@ public class PartitionManager {
         }
 
         if(!topologyInstanceId.equals(jsonTopologyId) && spoutConfig.forceFromStart) {
-            _committedTo = _consumer.getOffsetsBefore(spoutConfig.topic, id.partition, spoutConfig.startOffsetTime, 1)[0];
+            _committedTo = KafkaUtils.getLastOffset(_consumer, spoutConfig.topic, id.partition, spoutConfig.startOffsetTime, _consumer.clientId());
 	    LOG.info("Using startOffsetTime to choose last commit offset.");
         } else if(jsonTopologyId == null || jsonOffset == null) { // failed to parse JSON?
-            _committedTo = _consumer.getOffsetsBefore(spoutConfig.topic, id.partition, -1, 1)[0];
+            _committedTo = KafkaUtils.getLastOffset(_consumer, spoutConfig.topic, id.partition, -1, _consumer.clientId());
 	    LOG.info("Setting last commit offset to HEAD.");
         } else {
             _committedTo = jsonOffset;
@@ -125,27 +130,27 @@ public class PartitionManager {
     private void fill() {
         //LOG.info("Fetching from Kafka: " + _consumer.host() + ":" + _partition.partition + " from offset " + _emittedToOffset);
         long start = System.nanoTime();
-        ByteBufferMessageSet msgs = _consumer.fetch(
-                new FetchRequest(
-                    _spoutConfig.topic,
-                    _partition.partition,
-                    _emittedToOffset,
-                    _spoutConfig.fetchSizeBytes));
+        ByteBufferMessageSet msgs = KafkaUtils.fetchMessages(_consumer, _spoutConfig.topic, _partition.partition, _emittedToOffset, _spoutConfig.fetchSizeBytes);
         long end = System.nanoTime();
         long millis = (end - start) / 1000000;
+
+        int numMessages = 0;
+        for (MessageAndOffset msg : msgs) {
+            numMessages++;
+        }
+
         _fetchAPILatencyMax.update(millis);
         _fetchAPILatencyMean.update(millis);
         _fetchAPICallCount.incr();
-        _fetchAPIMessageCount.incrBy(msgs.underlying().size());
+        _fetchAPIMessageCount.incrBy(numMessages);
 
-        int numMessages = msgs.underlying().size();
         if(numMessages>0) {
           LOG.info("Fetched " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition);
         }
         for(MessageAndOffset msg: msgs) {
             _pending.add(_emittedToOffset);
             _waitingToEmit.add(new MessageAndRealOffset(msg.message(), _emittedToOffset));
-            _emittedToOffset = msg.offset();
+            _emittedToOffset = msg.nextOffset();
         }
         if(numMessages>0) {
           LOG.info("Added " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition + " to internal buffers");
@@ -197,8 +202,8 @@ public class PartitionManager {
     }
 
     public long queryPartitionOffsetLatestTime() {
-        return _consumer.getOffsetsBefore(_spoutConfig.topic, _partition.partition,
-                                          OffsetRequest.LatestTime(), 1)[0];
+        return KafkaUtils.getLastOffset(_consumer, _spoutConfig.topic, _partition.partition,
+                                          OffsetRequest.LatestTime(), _consumer.clientId());
     }
 
     public long lastCommittedOffset() {

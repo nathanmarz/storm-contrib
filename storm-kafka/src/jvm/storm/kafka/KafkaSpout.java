@@ -3,7 +3,6 @@ package storm.kafka;
 import java.util.*;
 
 import backtype.storm.metric.api.*;
-import backtype.storm.task.IMetricsContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +13,6 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
 import kafka.message.Message;
 import storm.kafka.PartitionManager.KafkaMessageId;
-import storm.kafka.trident.KafkaUtils;
 
 // TODO: need to add blacklisting
 // TODO: need to make a best effort to not re-emit messages if don't have to
