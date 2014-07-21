@@ -45,6 +45,7 @@ public class PartitionManager {
     DynamicPartitionConnections _connections;
     ZkState _state;
     Map _stormConf;
+    int _sampleAckCount;
 
 
     public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, GlobalPartitionId id) {
@@ -82,6 +83,7 @@ public class PartitionManager {
 
         LOG.info("Starting Kafka " + _consumer.host() + ":" + id.partition + " from offset " + _committedTo);
         _emittedToOffset = _committedTo;
+        _sampleAckCount = 0;
 
         _fetchAPILatencyMax = new CombinedMetric(new MaxMetric());
         _fetchAPILatencyMean = new ReducedMetric(new MeanReducer());
@@ -108,10 +110,15 @@ public class PartitionManager {
             }
             Iterable<List<Object>> tups = _spoutConfig.scheme.deserialize(Utils.toByteArray(toEmit.msg.payload()));
             if(tups!=null) {
-                for(List<Object> tup: tups)
-                    collector.emit(tup, new KafkaMessageId(_partition, toEmit.offset));
+                if (toEmit.offset < 0) {
+                    for(List<Object> tup: tups)
+                        collector.emit(tup);
+                } else {
+                    for(List<Object> tup: tups)
+                        collector.emit(tup, new KafkaMessageId(_partition, toEmit.offset));
+                }
                 break;
-            } else {
+            } else if (toEmit.offset > 0) {
                 ack(toEmit.offset);
             }
         }
@@ -143,9 +150,15 @@ public class PartitionManager {
           LOG.info("Fetched " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition);
         }
         for(MessageAndOffset msg: msgs) {
-            _pending.add(_emittedToOffset);
-            _waitingToEmit.add(new MessageAndRealOffset(msg.message(), _emittedToOffset));
-            _emittedToOffset = msg.offset();
+            long offset = -1;
+            if (_sampleAckCount++ % _spoutConfig.sampleAckRate == 0) {
+                _pending.add(_emittedToOffset);
+                LOG.info("Added emittedOffset : " + _emittedToOffset + " to pending");
+                offset = _emittedToOffset;
+                _emittedToOffset = msg.offset();
+                _sampleAckCount = 1;
+            }
+            _waitingToEmit.add(new MessageAndRealOffset(msg.message(), offset));
         }
         if(numMessages>0) {
           LOG.info("Added " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition + " to internal buffers");
