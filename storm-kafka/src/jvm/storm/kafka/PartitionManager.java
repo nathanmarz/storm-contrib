@@ -153,7 +153,6 @@ public class PartitionManager {
             long offset = -1;
             if (_sampleAckCount++ % _spoutConfig.sampleAckRate == 0) {
                 _pending.add(_emittedToOffset);
-                LOG.info("Added emittedOffset : " + _emittedToOffset + " to pending");
                 offset = _emittedToOffset;
                 _emittedToOffset = msg.offset();
                 _sampleAckCount = 1;
