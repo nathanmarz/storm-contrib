@@ -14,7 +14,7 @@ storm-contrib is organized as a "super-project" with a sub-folder for each modul
 
 Some storm-contrib modules are git submodules (links to external github repositories). This allows storm-contrib sub-projects to be maintained externally (so those projects can maintain branches and tags independently), but also included in storm-contrib to increase community visibility.
 
-More information about how git submodules work can be found in the [online git documentaton on submodules](http://git-scm.com/book/en/Git-Tools-Submodules).
+More information about how git submodules work can be found in the [online git documentation on submodules](http://git-scm.com/book/en/Git-Tools-Submodules).
 
 ## Initializing storm-contrib submodules
 
