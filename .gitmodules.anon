@@ -1,0 +1,45 @@
+[submodule "storm-cassandra"]
+	path = storm-cassandra
+	url = https://github.com/hmsonline/storm-cassandra.git
+[submodule "storm-jms"]
+	path = storm-jms
+	url = https://github.com/ptgoetz/storm-jms.git
+[submodule "storm-signals"]
+	path = storm-signals
+	url = https://github.com/ptgoetz/storm-signals.git
+[submodule "storm-examples"]
+	path = storm-examples
+	url = https://github.com/stormprocessor/storm-examples.git
+[submodule "storm-backport"]
+	path = storm-backport
+	url = https://github.com/stormprocessor/storm-backport.git
+[submodule "storm-benchmark"]
+	path = storm-benchmark
+	url = https://github.com/stormprocessor/storm-benchmark.git
+[submodule "storm-clockspout"]
+	path = storm-clockspout
+	url = https://github.com/stormprocessor/storm-clockspout.git
+[submodule "storm-mongo"]
+	path = storm-mongo
+	url = https://github.com/stormprocessor/storm-mongo.git
+[submodule "storm-sqs"]
+	path = storm-sqs
+	url = https://github.com/stormprocessor/storm-sqs.git
+[submodule "storm-hbase"]
+	path = storm-hbase
+	url = https://github.com/stormprocessor/storm-hbase.git
+[submodule "storm-ml"]
+	path = storm-ml
+	url = https://github.com/stormprocessor/storm-ml.git
+[submodule "storm-redis-pubsub"]
+	path = storm-redis-pubsub
+	url = https://github.com/stormprocessor/storm-redis-pubsub.git
+[submodule "storm-scribe"]
+	path = storm-scribe
+	url = https://github.com/stormprocessor/storm-scribe.git
+[submodule "storm-state"]
+	path = storm-state
+	url = https://github.com/stormprocessor/storm-state.git
+[submodule "storm-growl"]
+	path = storm-growl
+	url = https://github.com/tjun/storm-growl.git
