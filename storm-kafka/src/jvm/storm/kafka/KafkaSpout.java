@@ -145,7 +145,11 @@ public class KafkaSpout extends BaseRichSpout {
         KafkaMessageId id = (KafkaMessageId) msgId;
         PartitionManager m = _coordinator.getManager(id.partition);
         if(m!=null) {
-            m.fail(id.offset);
+            if (_spoutConfig.refetchOnFail) {
+                m.fail(id.offset);
+            } else {
+                m.ack(id.offset);
+            }
         } 
     }
 
