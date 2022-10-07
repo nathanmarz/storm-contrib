@@ -1,36 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+	<modelVersion>4.0.0</modelVersion>
 
-  <groupId>storm</groupId>
-  <artifactId>storm-contrib</artifactId>
-  <version>0.1-SNAPSHOT</version>
-  <packaging>pom</packaging>
-  <name>storm-contrib</name>
-  <description>A collection of spouts, bolts, serializers, DSLs, and other goodies to use with Storm</description>
-  <url>http://github.com/nathanmarz/storm-contrib</url>
+	<groupId>storm</groupId>
+	<artifactId>storm-contrib</artifactId>
+	<version>0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+	<name>storm-contrib</name>
+	<description>A collection of spouts, bolts, serializers, DSLs, and other goodies to use with Storm</description>
+	<url>http://github.com/nathanmarz/storm-contrib</url>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>storm</groupId>
-        <artifactId>storm</artifactId>
-        <version>0.6.1</version>
-        <scope>provided</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>storm</groupId>
+				<artifactId>storm</artifactId>
+				<version>0.9.0-wip15</version>
+				<scope>provided</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
-  <repositories>
-    <repository>
-      <id>clojars</id>
-      <url>http://clojars.org/repo/</url>
-    </repository>
-  </repositories>
+	<repositories>
+		<repository>
+			<id>clojars</id>
+			<url>http://clojars.org/repo/</url>
+		</repository>
+	</repositories>
 
-  <modules>
-    <module>storm-contrib-core</module>
-    <module>storm-contrib-mongo</module>
-    <module>storm-contrib-sqs</module>
-  </modules>
+	<modules>
+		<module>storm-kafka</module>
+		<module>storm-rdbms</module>
+
+		<module>storm-contrib-clockspout</module>
+		<module>storm-hbase</module>
+		<module>storm-mongo</module>
+		<module>storm-signals</module>
+		<module>storm-cassandra</module>
+		<module>storm-jms</module>
+		<module>storm-growl</module>
+		<module>storm-sqs</module> 
+	</modules>
 </project>
