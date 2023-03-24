@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.*;
 import kafka.api.FetchRequest;
 import kafka.api.OffsetRequest;
+import kafka.common.OffsetOutOfRangeException;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
 import kafka.message.MessageAndOffset;
@@ -45,6 +46,7 @@ public class PartitionManager {
     DynamicPartitionConnections _connections;
     ZkState _state;
     Map _stormConf;
+    int _sampleAckCount;
 
 
     public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, GlobalPartitionId id) {
@@ -82,6 +84,7 @@ public class PartitionManager {
 
         LOG.info("Starting Kafka " + _consumer.host() + ":" + id.partition + " from offset " + _committedTo);
         _emittedToOffset = _committedTo;
+        _sampleAckCount = 0;
 
         _fetchAPILatencyMax = new CombinedMetric(new MaxMetric());
         _fetchAPILatencyMean = new ReducedMetric(new MeanReducer());
@@ -108,10 +111,15 @@ public class PartitionManager {
             }
             Iterable<List<Object>> tups = _spoutConfig.scheme.deserialize(Utils.toByteArray(toEmit.msg.payload()));
             if(tups!=null) {
-                for(List<Object> tup: tups)
-                    collector.emit(tup, new KafkaMessageId(_partition, toEmit.offset));
+                if (toEmit.offset < 0) {
+                    for(List<Object> tup: tups)
+                        collector.emit(tup);
+                } else {
+                    for(List<Object> tup: tups)
+                        collector.emit(tup, new KafkaMessageId(_partition, toEmit.offset));
+                }
                 break;
-            } else {
+            } else if (toEmit.offset > 0) {
                 ack(toEmit.offset);
             }
         }
@@ -136,19 +144,31 @@ public class PartitionManager {
         _fetchAPILatencyMax.update(millis);
         _fetchAPILatencyMean.update(millis);
         _fetchAPICallCount.incr();
-        _fetchAPIMessageCount.incrBy(msgs.underlying().size());
+        try {
+            _fetchAPIMessageCount.incrBy(msgs.underlying().size());
 
-        int numMessages = msgs.underlying().size();
-        if(numMessages>0) {
-          LOG.info("Fetched " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition);
-        }
-        for(MessageAndOffset msg: msgs) {
-            _pending.add(_emittedToOffset);
-            _waitingToEmit.add(new MessageAndRealOffset(msg.message(), _emittedToOffset));
-            _emittedToOffset = msg.offset();
-        }
-        if(numMessages>0) {
-          LOG.info("Added " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition + " to internal buffers");
+            int numMessages = msgs.underlying().size();
+            if(numMessages>0) {
+            LOG.info("Fetched " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition);
+            }
+            for(MessageAndOffset msg: msgs) {
+                long offset = -1;
+                if (_sampleAckCount++ % _spoutConfig.sampleAckRate == 0) {
+                    _pending.add(_emittedToOffset);
+                    offset = _emittedToOffset;
+                    _emittedToOffset = msg.offset();
+                    _sampleAckCount = 1;
+                }
+                _waitingToEmit.add(new MessageAndRealOffset(msg.message(), offset));
+            }
+            if(numMessages>0) {
+            LOG.info("Added " + numMessages + " messages from Kafka: " + _consumer.host() + ":" + _partition.partition + " to internal buffers");
+            }
+        }catch (OffsetOutOfRangeException e) {
+            LOG.warn("Offset: " + _emittedToOffset + " is OOR(Out of Range), catching up with current earliest offset (-2) in Kafka " + _consumer.host() + ":" + _partition.partition);
+            _emittedToOffset = _consumer.getOffsetsBefore(_spoutConfig.topic, _partition.partition, -2, 1)[0];
+            LOG.warn("Catch up with current earliest offset (-2) : " + _emittedToOffset + " in Kafka " + _consumer.host() + ":" + _partition.partition);
+            fill();
         }
     }
 

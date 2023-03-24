@@ -4,3 +4,6 @@ lib/
 *.jar
 /storm-kafka/target/
 /storm-kafka/.idea/
+.idea
+.idea/*
+*.iml
