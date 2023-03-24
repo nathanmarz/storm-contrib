@@ -1,6 +1,7 @@
 package storm.kafka.trident;
 
 import java.net.ConnectException;
+import java.net.NoRouteToHostException;
 import java.util.*;
 
 import backtype.storm.metric.api.CombinedMetric;
@@ -77,7 +78,7 @@ public class KafkaUtils {
             meanMetric.update(millis);
             maxMetric.update(millis);
          } catch(Exception e) {
-             if(e instanceof ConnectException) {
+             if(e instanceof ConnectException || e instanceof NoRouteToHostException) {
                  throw new FailedFetchException(e);
              } else {
                  throw new RuntimeException(e);
